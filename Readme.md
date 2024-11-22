@@ -28,7 +28,7 @@ The server will handle all game logic and state transitions, from “flipping”
 
 ### Roles
 
-Leopold and Francesco will work on the server-side logic of the app, implementing the algorithms and states of the poker game, whereas William will work on the user interface, while also working closely with Basile who will be taking care of the wires and types for the app.
+Leopold and Francesco will work on the server-side logic of the app, implementing the algorithms and states of the poker game, whereas William will work on the user interface, while also working closely with Basile who will be taking care of the wires and types for the app. For the tests, each member will write tests for the work of his companion (Leo - Francesco, Basile - William).
 
 ### Mock-ups
 
