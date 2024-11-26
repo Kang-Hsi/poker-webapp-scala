@@ -1,3 +1,6 @@
+package apps.app77
+
+
 type Money = Int
 
 type Pot = Money
