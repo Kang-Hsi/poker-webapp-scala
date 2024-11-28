@@ -1,5 +1,5 @@
 package apps.app77
-
+import upickle.default.*
 
 type Money = Int
 
@@ -13,7 +13,7 @@ type BetAmount = Money
 
 type Round = Int
 
-enum Suit:
+enum Suit derives ReadWriter:
   case Heart
   case Diamond
   case Spades
@@ -23,31 +23,31 @@ type CardRepresentation = String
 
 type Card = (Suit, Int, CardRepresentation)
 
-type Deck = List[Cards]
+type Deck = List[Card]
 
-enum Status:
+enum Status derives ReadWriter:
   case Playing
   case Spectating
 
-enum Role:
+enum Role derives ReadWriter:
   case Dealer
   case SmallBlind(amount:Money)
   case BigBlind(amout:Money)
 
-enum Event:
+enum Event derives ReadWriter:
   case Check()
   case Fold()
   case Bet(amount:Money)
 
 
-case class View(
+case class View (
   gameInfo: GameInfo,
   gameConfig: GameConfig
-)
+) derives ReadWriter
 
 case class GameConfig(
   maxRound: Round
-)
+) derives ReadWriter
 
 case class GameInfo(
   players:List[PlayerInfo],//Ordered list where the 1st item is the current player. Client can be inferred by the Option of hand
@@ -58,10 +58,10 @@ case class GameInfo(
   callAmount: Money,
   minRaise: Money,
   maxRaise:Money,
-)
-  
+) derives ReadWriter
 
-enum GamePhase:
+
+enum GamePhase derives ReadWriter:
   case PreFlop
   case Flop
   case Turn
@@ -75,9 +75,9 @@ case class State(
   gameInfo: GameInfo,
   deck: Deck,
   gameConfig: GameConfig
-  )
+  ) derives ReadWriter
 
-  
 
-  
+
+
 
