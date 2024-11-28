@@ -23,7 +23,7 @@ type CardRepresentation = String
 
 type Card = (Suit, Int, CardRepresentation)
 
-type Deck = List[Cards]
+type Deck = List[Card]
 
 enum Status:
   case Playing
