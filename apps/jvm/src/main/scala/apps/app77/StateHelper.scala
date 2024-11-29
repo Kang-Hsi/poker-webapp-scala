@@ -2,6 +2,7 @@ package apps.app77
 
 import apps.app77.CardHelper.shuffle
 import apps.app77.Logic
+import cs214.webapp.*
 //TODO maybe rename the class name
 
 extension (st: State)
@@ -72,12 +73,40 @@ extension (st: State)
         deck = CardHelper.allCards.shuffle()
       )
 
-    stateWithNewShuffledDeck.assignCardsToPlayers()
+    stateWithNewShuffledDeck.assignCardsToPlayers().populateBlinds()
 
+
+  //pas obligé de la faire elle est dure
+  def findWinner():UserId=
+    ???
+
+  /**
+   * fais tout le nécéssaire pour finir le round
+   * (trouves le winner, lui donnes largent)
+   * applée juste avant startRound
+  **/
+  def endRound():State=
+    ???
     
+  /**
+   * Populate the blind amount in functio of config
+  **/
+  def populateBlinds(using Configuration):State=
+    ???
 
+  /**
+   * Vérifie que l'on puisses aller a la phase d'après 
+   * (oui si on est au dernier joueur et tout le monde a le meme
+   * bet amount (qui joue)
+  **/
+  def canGoNextPhase():Boolean=
+    ???
 
-
+  /**
+   * Va a la nextPhase
+  **/
+  def nextPhase():State=
+    ???
 
 extension( gi:GameInfo)
   def rotatePlayerTurnInternal()=
