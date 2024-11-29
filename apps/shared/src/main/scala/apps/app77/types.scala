@@ -1,5 +1,6 @@
 package apps.app77
 import upickle.default.*
+import cs214.webapp.*
 
 type Money = Int
 
@@ -7,7 +8,7 @@ type Pot = Money
 
 type PlayerHand = Set[Card]
 
-type PlayerInfo = (Money, Role, Status, Option[PlayerHand], BetAmount)
+type PlayerInfo = (UserId,Money, Role, Status, Option[PlayerHand], BetAmount)
 
 type BetAmount = Money
 
@@ -33,6 +34,7 @@ enum Role derives ReadWriter:
   case Dealer
   case SmallBlind(amount:Money)
   case BigBlind(amout:Money)
+  case Normal
 
 enum Event derives ReadWriter:
   case Check()

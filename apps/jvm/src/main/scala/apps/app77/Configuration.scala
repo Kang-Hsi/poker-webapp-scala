@@ -31,3 +31,11 @@ trait Configuration:
    * The factor with witch the small blind is multiplied every n rounds
   **/
   def getMultiplyChipIn: Int
+
+
+
+
+object Configuration:
+  def get(using conf:Configuration)= conf
+  
+  
