@@ -48,6 +48,20 @@ class Logic extends StateMachine[Event, State, View]:
       0
     )
 
+  /**
+   * Gives the initial game state.
+   * This game state is "virgin" : No deck is attibued, only the
+   * player roles are.
+   * This is done so that this game state can be passed trhough a general initRound function
+  **/
+  private def initVirginGameState(clients: Seq[UserId]):State=
+    State(
+      GamePhase.PreFlop,
+      initGameInfo(clients),
+      Nil,
+      initGameConfig()
+    )
+
 
 
 /**
