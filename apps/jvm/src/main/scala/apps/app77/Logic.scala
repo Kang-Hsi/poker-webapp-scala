@@ -16,6 +16,14 @@ class Logic extends StateMachine[Event, State, View]:
   )
   
   private val minPlayers = 3
+
+  private val defaultDeck = 
+    (for 
+      suit <- Suit.values
+      nb <- 1 to 13
+    yield
+      (suit, nb, "")
+    ).toList                      
   
   /**
    * Get the Global Configuration for our game
@@ -64,7 +72,6 @@ class Logic extends StateMachine[Event, State, View]:
         (user._1, conf.getMoney(), Role.Normal, 
          Status.Playing, None, 0)
     ).toList
-
 
 
         
