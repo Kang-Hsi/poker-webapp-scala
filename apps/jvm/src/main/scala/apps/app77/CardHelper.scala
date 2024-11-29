@@ -17,11 +17,9 @@ object CardHelper:
     ).toList                      
 
 
-  /**
-   * Produces a set of shuffled cards each time this is called
-  **/
-  def shuffledCards = Random.shuffle(allCards)
-  
+  extension (d:Deck)
+    def shuffle()=
+      Random.shuffle(d)
   
   /**
    * Used Chat GPT for generating this list

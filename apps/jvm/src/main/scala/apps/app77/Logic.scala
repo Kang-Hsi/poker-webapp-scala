@@ -17,15 +17,7 @@ class Logic extends StateMachine[Event, State, View]:
   
   private val minPlayers = 3
 
-  private val defaultDeck = 
-    (for 
-      suit <- Suit.values
-      nb <- 1 to 13
-    yield
-      (suit, nb, "")
-    ).toList                      
-  
-  /**
+    /**
    * Get the Global Configuration for our game
   **/
   val conf = Configuration.get() 
@@ -44,7 +36,19 @@ class Logic extends StateMachine[Event, State, View]:
       conf.getRounds()
     )
 
-        
+  private def initGameInfo(clients: Seq[UserId]): GameInfo=
+    GameInfo(
+      createFirstPlayerInfo(clients) ,//cards not shuffled watch out
+      0,
+      Nil,
+      0,
+      "Initialized game" :: Nil,
+      0,
+      0,
+      0
+    )
+
+  
 
   /**
    * Returns a List of Player Info from the set of User Id,
