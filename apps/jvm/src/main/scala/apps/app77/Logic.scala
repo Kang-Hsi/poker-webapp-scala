@@ -6,6 +6,7 @@ import cs214.webapp.server.{StateMachine}
 import scala.util.{Random, Try}
 
 class Logic extends StateMachine[Event, State, View]:
+  
 
   
   val appInfo: AppInfo = AppInfo(
@@ -22,3 +23,9 @@ class Logic extends StateMachine[Event, State, View]:
   override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] =   ??? 
 
   override def project(state: State)(userId: UserId): View = ???
+
+  
+  private def initGameConfig(): GameConfig=
+    GameConfig(
+      maxRound
+    )
