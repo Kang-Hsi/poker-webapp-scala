@@ -68,7 +68,7 @@ extension( gi:GameInfo)
         import apps.app77.Role.*
         zippedPlayers.map((p,i) =>
           p.getRole() match
-            case Dealer => ???
+            case Dealer => p.withRole(players((i-1) % players.length).getRole())
             case SmallBlind(amount) => p.withRole(Dealer)
             case BigBlind(amount) => p.withRole(SmallBlind(0))
             case Normal => 
