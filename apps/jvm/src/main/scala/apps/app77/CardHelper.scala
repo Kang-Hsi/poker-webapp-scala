@@ -1,11 +1,13 @@
 package apps.app77
 
+import scala.util.Random
+
 object CardHelper:
   
   /**
    * The basic ordonned deck of cards
 **/ 
-  val allCards = 
+  val allCards: Deck = 
     val repr = allRepresentations.toIterator
     (for 
       suit <- Suit.values
@@ -13,8 +15,14 @@ object CardHelper:
     yield
       (suit, nb, repr.next())
     ).toList                      
-  
 
+
+  /**
+   * Produces a set of shuffled cards each time this is called
+  **/
+  def shuffledCards = Random.shuffle(allCards)
+  
+  
   /**
    * Used Chat GPT for generating this list
   **/
