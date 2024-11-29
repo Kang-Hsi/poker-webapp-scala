@@ -54,6 +54,29 @@ extension (st: State)
   def setBeginOfRoundOrder()=
    st.copy(gameInfo = st.gameInfo.setBeginOfRoundOrderInternal())
 
+  /**
+   * To be called before the start of a round
+   * Will populize the state with a new deck
+   * Will rotate the players roles & set the right order
+   * Will populate the players with cards
+  **/
+  def startRound()=
+
+    import apps.app77.CardHelper.shuffle
+    val stateWithNewRoles = st.rotatePlayerRole()
+    val stateWithRightOrder = 
+      stateWithNewRoles.setBeginOfRoundOrder()
+
+    val stateWithNewShuffledDeck =
+      stateWithRightOrder.copy(
+        deck = CardHelper.allCards.shuffle()
+      )
+
+    stateWithNewShuffledDeck.assignCardsToPlayers()
+
+    
+
+
 
 
 extension( gi:GameInfo)

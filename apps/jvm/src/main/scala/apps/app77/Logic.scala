@@ -31,6 +31,8 @@ class Logic extends StateMachine[Event, State, View]:
   override def project(state: State)(userId: UserId): View = ???
 
   
+
+
   private def initGameConfig(): GameConfig=
     GameConfig(
       conf.getRounds()
@@ -64,19 +66,6 @@ class Logic extends StateMachine[Event, State, View]:
 
 
 
-/**
- * Method to be called in beetween rounds
- * Does several things : 
- *  1 - rotates the order of players
- *  2 - get a new deck
- *  3 - reshuffle the deck
- *  4 - assigns cards to each player
- *  5 - finds who won, (not sure about this : We need to call this method at the beginnign of the game) 
- *  6 - updates the balance of the player who won
- *  7 - updates the blind amount if needed
-**/
- private def transitionRound(state:State):State=
-    ???
 
   /**
    * Returns a List of Player Info from the set of User Id,
