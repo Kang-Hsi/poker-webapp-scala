@@ -46,7 +46,14 @@ extension (st: State)
    * Sets the amount of BigBlind & SmallBlind to 0
    **/
   def rotatePlayerRole()=
-    st.copy(gameInfo = st.gameInfo.copy(st.gameInfo.rotatePlayerRolesInternal()))
+    st.copy(gameInfo = st.gameInfo.rotatePlayerRolesInternal())
+
+  /**
+   * Set the player with smallBlind as first player to play etc...
+  **/
+  def setBeginOfRoundOrder()=
+   st.copy(gameInfo = st.gameInfo.setBeginOfRoundOrderInternal())
+
 
 
 extension( gi:GameInfo)
@@ -56,13 +63,14 @@ extension( gi:GameInfo)
       oldPlayers.drop(1).appended(oldPlayers.head)
     })
 
+
   def rotatePlayerRolesInternal()=
     val players = gi.players
     val zippedPlayers = players.zipWithIndex
 
     val lastBigBlind=  zippedPlayers.find( p => p._1.isBigBlind())
    
-    lastBigBlind match
+    val newPlayers = lastBigBlind match
       case Some(bigBlind) => 
         val indexOfBigBlind = bigBlind._2
         import apps.app77.Role.*
@@ -79,9 +87,16 @@ extension( gi:GameInfo)
               
           ) 
 
-      case None => throw Exception("No dealer in the game ??")
+      case None => throw Exception("No Big Blind in the game ??")
+
+      gi.copy(players = newPlayers)
 
     
-
+  def setBeginOfRoundOrderInternal()=
+    val player = gi.players
+    val smallBlindIndex = player.indexWhere( p => p.isSmallBlind())
+    assert(smallBlindIndex >= 0, "No Small Blind Player ??")
+    gi.copy(players = player.drop(smallBlindIndex) ++ player.take(smallBlindIndex))
+    
     
 
