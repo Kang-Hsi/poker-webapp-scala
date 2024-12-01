@@ -6,7 +6,7 @@ package apps.app77
  * need for a poker game.
  **/
 trait Configuration:
-  
+
   /**
    * The number of rounds before the end of a game
   **/
@@ -18,7 +18,7 @@ trait Configuration:
   def getInitialMoney: Money
 
   /**
-   * The initial amount of money you have to pay as a small blind 
+   * The initial amount of money you have to pay as a small blind
   **/
   def getInitialChipIn: Money //LEO refacotr le nom il est guez
 
@@ -36,6 +36,13 @@ trait Configuration:
 
 
 object Configuration:
+  given standardConfig: Configuration with
+    def getMaxRound: Round = 20
+    def getInitialMoney: Money = 1000
+    def getInitialChipIn: Money = 50
+    def getRoundNumberToMultiplyChipIn: Round = 5
+    def getMultiplyChipIn: Int = 2
+    
   def get(using conf:Configuration)= conf
-  
-  
+
+
