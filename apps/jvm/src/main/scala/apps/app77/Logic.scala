@@ -6,36 +6,36 @@ import cs214.webapp.server.{StateMachine}
 import scala.util.{Random, Try}
 
 class Logic extends StateMachine[Event, State, View]:
-  
-  
+
+
   val appInfo: AppInfo = AppInfo(
     id = "app77",
     name = "TBD",
     description = "TBD",
     year=2024
   )
-  
+
   private val minPlayers = 3
 
     /**
    * Get the Global Configuration for our game
   **/
-  val conf = Configuration.get() 
+  val conf = Configuration.get
 
   override val wire = Wire
-  
+
   override def init(clients: Seq[UserId]): State = ???
 
-  override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] =   ??? 
+  override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] =   ???
 
   override def project(state: State)(userId: UserId): View = ???
 
-  
+
 
 
   private def initGameConfig(): GameConfig=
     GameConfig(
-      conf.getRounds()
+      conf.getMaxRound
     )
 
   private def initGameInfo(clients: Seq[UserId]): GameInfo=
@@ -79,23 +79,23 @@ class Logic extends StateMachine[Event, State, View]:
     (for
       user <- clients.zipWithIndex
     yield
-      if user._2 == 1 then 
-       (user._1, conf.getMoney(), Role.SmallBlind(conf.getBlindTruc), 
+      if user._2 == 1 then
+       (user._1, conf.getInitialMoney, Role.SmallBlind(conf.getInitialChipIn),
          Status.Playing, None, 0)
       else if user._2 == 2 then
-        (user._1, conf.getMoney(), Role.BigBlind(conf.getBlindTruc), 
+        (user._1, conf.getInitialMoney, Role.BigBlind(2 * conf.getInitialChipIn),
          Status.Playing, None, 0)
       else if user._2 == 0 then
-        (user._1, conf.getMoney(), Role.Dealer, 
+        (user._1, conf.getInitialMoney, Role.Dealer,
          Status.Playing, None, 0)
       else
-        (user._1, conf.getMoney(), Role.Normal, 
+        (user._1, conf.getInitialMoney, Role.Normal,
          Status.Playing, None, 0)
     ).toList
 
 
-        
-    
+
+
 /**
  * Some usefull methods for easy manipulation of PlayerInfo type
 **/
@@ -138,7 +138,7 @@ extension (p :PlayerInfo)
 
   def isBigBlind()=
     p.getRole() == Role.BigBlind
-  
+
   def isNormal()=
     p.getRole() == Role.Normal
 

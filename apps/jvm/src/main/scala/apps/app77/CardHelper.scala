@@ -22,7 +22,7 @@ object CardHelper:
    * The basic ordonned deck of cards
 **/
   val allCards: Deck =
-    val repr = allRepresentations.toIterator
+    val repr = allRepresentations.iterator
     (for
       suit <- Suit.values
       nb <- 1 to 13

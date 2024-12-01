@@ -17,10 +17,10 @@ extension (st: State)
     val deckIterator = st.deck.iterator
 
     val gameInfo = st.gameInfo
-    
+
     val players = gameInfo.players
 
-    val playersWithCards = (for 
+    val playersWithCards = (for
       pl <- players
     yield
       pl.withOptionHand(Some(
@@ -31,10 +31,10 @@ extension (st: State)
     st.copy(
       deck = deckIterator.toList,
       gameInfo = gameInfo.copy(
-        players = playersWithCards 
+        players = playersWithCards
       )
       )
-       
+
   def rotatePlayerTurn()=
     st.copy(gameInfo = st.gameInfo.rotatePlayerTurnInternal())
 
@@ -43,7 +43,7 @@ extension (st: State)
    * Since we have to assume it could be called anytime
    *
    * So this functions rotates the players roles BUT
-   * Does not rotate to the next player 
+   * Does not rotate to the next player
    * Sets the amount of BigBlind & SmallBlind to 0
    **/
   def rotatePlayerRole()=
@@ -65,7 +65,7 @@ extension (st: State)
 
     import apps.app77.CardHelper.shuffle
     val stateWithNewRoles = st.rotatePlayerRole()
-    val stateWithRightOrder = 
+    val stateWithRightOrder =
       stateWithNewRoles.setBeginOfRoundOrder()
 
     val stateWithNewShuffledDeck =
@@ -73,7 +73,7 @@ extension (st: State)
         deck = CardHelper.allCards.shuffle()
       )
 
-    stateWithNewShuffledDeck.assignCardsToPlayers().populateBlinds()
+    stateWithNewShuffledDeck.assignCardsToPlayers().populateBlinds
 
 
   //pas obligé de la faire elle est dure
@@ -87,7 +87,7 @@ extension (st: State)
   **/
   def endRound():State=
     ???
-    
+
   /**
    * Populate the blind amount in functio of config
   **/
@@ -95,7 +95,7 @@ extension (st: State)
     ???
 
   /**
-   * Vérifie que l'on puisses aller a la phase d'après 
+   * Vérifie que l'on puisses aller a la phase d'après
    * (oui si on est au dernier joueur et tout le monde a le meme
    * bet amount (qui joue)
   **/
@@ -121,9 +121,9 @@ extension( gi:GameInfo)
     val zippedPlayers = players.zipWithIndex
 
     val lastBigBlind=  zippedPlayers.find( p => p._1.isBigBlind())
-   
+
     val newPlayers = lastBigBlind match
-      case Some(bigBlind) => 
+      case Some(bigBlind) =>
         val indexOfBigBlind = bigBlind._2
         import apps.app77.Role.*
         zippedPlayers.map((p,i) =>
@@ -131,24 +131,24 @@ extension( gi:GameInfo)
             case Dealer => p.withRole(players((i-1) % players.length).getRole())
             case SmallBlind(amount) => p.withRole(Dealer)
             case BigBlind(amount) => p.withRole(SmallBlind(0))
-            case Normal => 
+            case Normal =>
               if i == ((indexOfBigBlind + 1) % players.length) then
                 p.withRole(BigBlind(0))
               else
                 p
-              
-          ) 
+
+          )
 
       case None => throw Exception("No Big Blind in the game ??")
 
       gi.copy(players = newPlayers)
 
-    
+
   def setBeginOfRoundOrderInternal()=
     val player = gi.players
     val smallBlindIndex = player.indexWhere( p => p.isSmallBlind())
     assert(smallBlindIndex >= 0, "No Small Blind Player ??")
     gi.copy(players = player.drop(smallBlindIndex) ++ player.take(smallBlindIndex))
-    
-    
+
+
 
