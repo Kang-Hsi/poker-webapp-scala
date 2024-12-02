@@ -4,6 +4,8 @@ package apps.app77
 import cs214.webapp.*
 import cs214.webapp.server.{StateMachine}
 import scala.util.{Random, Try}
+import GamePhase.*
+import CardHelper.*
 
 class Logic extends StateMachine[Event, State, View]:
 
@@ -24,31 +26,64 @@ class Logic extends StateMachine[Event, State, View]:
 
   override val wire = Wire
 
-  override def init(clients: Seq[UserId]): State = ???
+  override def init(clients: Seq[UserId]): State = 
+    State(
+      gamePhase = PreFlop,
+      gameInfo = initGameInfo(clients),
+      deck = Nil,
+      gameConfig = initGameConfig()
+    ) 
+    //transitionState
 
-  override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] =   ???
-
-  override def project(state: State)(userId: UserId): View = ???
+  
 
 
 
+  override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] = ???
+    
 
+    
+
+  override def project(state: State)(userId: UserId): View = 
+
+    val gameInfoView = state.gameInfo
+    val gameConfigView = state.gameConfig
+    
+    val players = gameInfoView.players
+
+    val showOnlyUserCards = players.map(player =>
+      if player.getUserId() != userId then
+        player.withOptionHand(None) else
+        player
+    )
+
+    View(
+      gameInfoView.copy(players = showOnlyUserCards),
+      gameConfigView
+    )
+
+      
+      
+  private def initGameInfo(clients: Seq[UserId]): GameInfo =
+      GameInfo(
+        initializePlayers(clients) ,//cards not shuffled watch out
+        0,
+        Nil,
+        0,
+        "Initialized game" :: Nil,
+        0,
+        0,
+        0
+      )
+      
   private def initGameConfig(): GameConfig=
     GameConfig(
-      conf.getMaxRound
+      conf.getMaxRound,
+      conf.getSmallBlind,
+      conf.getBigBlind
     )
 
-  private def initGameInfo(clients: Seq[UserId]): GameInfo=
-    GameInfo(
-      createFirstPlayerInfo(clients) ,//cards not shuffled watch out
-      0,
-      Nil,
-      0,
-      "Initialized game" :: Nil,
-      0,
-      0,
-      0
-    )
+  
 
   /**
    * Gives the initial game state.
@@ -73,24 +108,23 @@ class Logic extends StateMachine[Event, State, View]:
    * as well as the Status, the Money ,and of course the Id.
    * This list is ordered for the round before the first round : the first player is the dealer, 2nd the small blind, & third the big => On this ways we can easily call the method transition round to rotate effectively the list
   **/
-  private def createFirstPlayerInfo(clients: Seq[UserId]): List[PlayerInfo]=
+  private def initializePlayers(clients: Seq[UserId]): List[PlayerInfo]=
+    import Role.*
     assert(clients.length >= minPlayers, cs214.webapp.AppException("Not enough players ! Minimum is " + minPlayers ))
 
+    val initialMoney = conf.getInitialMoney
+
     (for
-      user <- clients.zipWithIndex
+      (userId, position) <- clients.zipWithIndex
     yield
-      if user._2 == 1 then
-       (user._1, conf.getInitialMoney, Role.SmallBlind(conf.getInitialChipIn),
-         Status.Playing, None, 0)
-      else if user._2 == 2 then
-        (user._1, conf.getInitialMoney, Role.BigBlind(2 * conf.getInitialChipIn),
-         Status.Playing, None, 0)
-      else if user._2 == 0 then
-        (user._1, conf.getInitialMoney, Role.Dealer,
-         Status.Playing, None, 0)
-      else
-        (user._1, conf.getInitialMoney, Role.Normal,
-         Status.Playing, None, 0)
+      if position == 0 then
+        (userId, initialMoney, Dealer, Status.Playing, None, 0, false, initialMoney)
+      else if position == 1 then
+       (userId, initialMoney, SmallBlind, Status.Playing, None, 0, false, initialMoney)
+      else if position == 2 then
+        (userId, initialMoney, BigBlind, Status.Playing, None, 0, false, initialMoney)
+      else 
+        (userId, initialMoney, Normal, Status.Playing, None, 0, false, initialMoney)
     ).toList
 
 
@@ -101,22 +135,22 @@ class Logic extends StateMachine[Event, State, View]:
 **/
 extension (p :PlayerInfo)
   def withId(id:UserId)=
-    (id, p._2, p._3, p._4, p._5, p._6)
+    (id, p._2, p._3, p._4, p._5, p._6, p._7, p._8)
 
   def withMoney(money :Money)=
-    (p._1, money, p._3, p._4, p._5, p._6)
+    (p._1, money, p._3, p._4, p._5, p._6, p._7, p._8)
 
   def withRole(role: Role)=
-    (p._1, p._2, role, p._4, p._5, p._6)
+    (p._1, p._2, role, p._4, p._5, p._6, p._7, p._8)
 
   def withStatus(status :Status)=
-    (p._1, p._2, p._3, status, p._5, p._6)
+    (p._1, p._2, p._3, status, p._5, p._6, p._7, p._8)
 
   def withOptionHand(hand: Option[PlayerHand])=
-    (p._1, p._2, p._3, p._4, hand, p._6)
+    (p._1, p._2, p._3, p._4, hand, p._6, p._7, p._8)
 
   def withBetAmount(betAmount: BetAmount)=
-    (p._1, p._2, p._3, p._4, p._5, betAmount)
+    (p._1, p._2, p._3, p._4, p._5, betAmount, p._7, p._8)
 
   def updateMoney(moneyToAddOrSub: Money)=
     p.withMoney(p._2 + moneyToAddOrSub)
@@ -127,9 +161,13 @@ extension (p :PlayerInfo)
   def fold()=
     p.withStatus(Status.Spectating) //watch out , we might need to reset the betAmount
 
+  def getUserId()=
+    p._1
+
   def getRole()=
     p._3
 
+  
   def isDealer()=
     p.getRole() == Role.Dealer
 

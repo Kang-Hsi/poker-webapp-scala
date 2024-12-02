@@ -18,19 +18,23 @@ trait Configuration:
   def getInitialMoney: Money
 
   /**
-   * The initial amount of money you have to pay as a small blind
+   * Get small blind.
   **/
-  def getInitialChipIn: Money //LEO refacotr le nom il est guez
+  def getSmallBlind: Money 
+
+  /**
+    * Get big blind.
+    *
+    * @return big blind amount
+    */
+  def getBigBlind: Money
 
   /**
    * How many rounds before we apply to multiply the small blind with getMultiPlyChipIn
   **/
   def getRoundNumberToMultiplyChipIn : Round
 
-  /**
-   * The factor with witch the small blind is multiplied every n rounds
-  **/
-  def getMultiplyChipIn: Int
+  
 
 
 
@@ -38,10 +42,10 @@ trait Configuration:
 object Configuration:
   given standardConfig: Configuration with
     def getMaxRound: Round = 20
-    def getInitialMoney: Money = 1000
-    def getInitialChipIn: Money = 50
+    def getInitialMoney: Money = 100
+    def getSmallBlind: Money = 1
+    def getBigBlind: Money = 2
     def getRoundNumberToMultiplyChipIn: Round = 5
-    def getMultiplyChipIn: Int = 2
     
   def get(using conf:Configuration)= conf
 

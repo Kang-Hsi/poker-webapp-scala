@@ -12,11 +12,11 @@ class StateHelperTests extends FunSuite :
         playerIds.zipWithIndex.map { case (userId, index) =>
             val role = index match {
             case 0 => Role.Dealer
-            case 1 => Role.SmallBlind(config.getInitialChipIn)
-            case 2 => Role.BigBlind(2 * config.getInitialChipIn)
+            case 1 => Role.SmallBlind
+            case 2 => Role.BigBlind
             case _ => Role.Normal
             }
-            (userId, config.getInitialMoney, role, Status.Playing, None: Option[PlayerHand], 0)
+            (userId, config.getInitialMoney, role, Status.Playing, None: Option[PlayerHand], 0, false, config.getInitialMoney)
         }.toList
 
     def createInitialGameInfo(players: List[PlayerInfo])(using config : Configuration): GameInfo =
@@ -26,8 +26,8 @@ class StateHelperTests extends FunSuite :
             communalCards = List.empty,
             pot = 0,
             logs = List("Game initialized"),
-            callAmount = config.getInitialChipIn,
-            minRaise = config.getInitialChipIn,
+            callAmount = config.getSmallBlind,
+            minRaise = config.getSmallBlind,
             maxRaise = config.getInitialMoney
         )
 
@@ -39,7 +39,7 @@ class StateHelperTests extends FunSuite :
             gamePhase = GamePhase.PreFlop,
             gameInfo = gameInfo,
             deck = shuffledDeck,
-            gameConfig = GameConfig(config.getMaxRound)
+            gameConfig = GameConfig(config.getMaxRound, config.getSmallBlind, config.getBigBlind)
         )
 
     def createUserIds(numPlayers: Int, prefix: String = "Player"): List[UserId] =
@@ -96,7 +96,7 @@ class StateHelperTests extends FunSuite :
         val thirdPlayerUpdated = updatedState.gameInfo.players(2)
         assert(lastPlayerInit == thirdPlayerUpdated, "The last player should now be the third player.")
 
-    test("rotatePlayerRole: the dealer should become the normal (with 4 players)") :
+    test("rotatePlayerRole: the dealer should become the Small Blind (with 4 players)") :
         var initialState = createInitialState(createUserIds(numPlayers = 4))
         var dealer = initialState.gameInfo.players.find(p => p.isDealer()).get
         for (_ <- 0 to 3)
@@ -106,7 +106,7 @@ class StateHelperTests extends FunSuite :
             initialState = updatedState
             dealer = initialState.gameInfo.players.find(p => p._3 == Role.Dealer).get
 
-    test("rotatePlayerRole: Small Blind should become Dealer after full rotation") :
+    test("rotatePlayerRole: Small Blind should become Big Blind after full rotation") :
         var initialState = createInitialState(createUserIds(numPlayers = 4))
         var smallBlind = initialState.gameInfo.players.find(p => p.isSmallBlind()).get
         for (_ <- 0 to 3) {
@@ -117,7 +117,7 @@ class StateHelperTests extends FunSuite :
             smallBlind = initialState.gameInfo.players.find(p => p.isSmallBlind()).get
     }
 
-    test("rotatePlayerRole: Big Blind should become Small Blind after full rotation") :
+    test("rotatePlayerRole: Big Blind should become Normal after full rotation") :
         var initalState = createInitialState(createUserIds(numPlayers = 4))
         var bigBlind = initalState.gameInfo.players.find(p => p.isBigBlind()).get
 
@@ -129,7 +129,7 @@ class StateHelperTests extends FunSuite :
             bigBlind = initalState.gameInfo.players.find(p => p.isBigBlind()).get
         }
 
-    test("rotatePlayerRole: Normal player should become Big Blind after full rotation") :
+    test("rotatePlayerRole: Normal player should become Dealer after full rotation") :
         var initalState = createInitialState(createUserIds(numPlayers = 4))
         var normal = initalState.gameInfo.players.find(p => p.isNormal()).get
 

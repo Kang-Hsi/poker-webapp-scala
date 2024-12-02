@@ -5,18 +5,21 @@ import apps.app77.Logic
 import cs214.webapp.*
 //TODO maybe rename the class name
 
-extension (st: State)
-  def shuffleDeck()=
-    st.copy(deck = st.deck.shuffle())
+extension (state: State)
+
+  def shuffleDeck =
+    state.copy(deck = state.deck.shuffle())
 
   /**
-   * Creates a new state with each players 2 cards assgiend to him.
+   * Creates a new state with each players 2 cards assigned to him.
    * The Deck is also updated
+   * 
+   * @TODO skip spectacting
   **/
   def assignCardsToPlayers()=
-    val deckIterator = st.deck.iterator
+    val deckIterator = state.deck.iterator
 
-    val gameInfo = st.gameInfo
+    val gameInfo = state.gameInfo
 
     val players = gameInfo.players
 
@@ -28,7 +31,7 @@ extension (st: State)
             deckIterator.next())
     ))).toList
 
-    st.copy(
+    state.copy(
       deck = deckIterator.toList,
       gameInfo = gameInfo.copy(
         players = playersWithCards
@@ -36,35 +39,43 @@ extension (st: State)
       )
 
   def rotatePlayerTurn()=
-    st.copy(gameInfo = st.gameInfo.rotatePlayerTurnInternal())
+    state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
 
   /**
-   * Rotates the role of the players; This function is implementein a "hard way",
+   * Rotates the role of the players; This function is implemented in a "hard way",
    * Since we have to assume it could be called anytime
    *
    * So this functions rotates the players roles BUT
    * Does not rotate to the next player
-   * Sets the amount of BigBlind & SmallBlind to 0
+   * Sets the amount of BigBlind & SmallBlind to 0 
+   * @TODO make sure to skip spectacting players
    **/
   def rotatePlayerRole()=
-    st.copy(gameInfo = st.gameInfo.rotatePlayerRolesInternal())
+    state.copy(gameInfo = state.gameInfo.rotatePlayerRolesInternal())
 
   /**
    * Set the player with smallBlind as first player to play etc...
+   * 
+   * @TODO skips spectacting
   **/
   def setBeginOfRoundOrder()=
-   st.copy(gameInfo = st.gameInfo.setBeginOfRoundOrderInternal())
+   state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal())
 
   /**
    * To be called before the start of a round
    * Will populize the state with a new deck
    * Will rotate the players roles & set the right order
    * Will populate the players with cards
+   * 
+   * 
+   * Will reset pot amount ?
+   * Will roundNumber-- ?
+   * Will set callAmount, minRaise, maxRaise?
   **/
   def startRound()=
 
     import apps.app77.CardHelper.shuffle
-    val stateWithNewRoles = st.rotatePlayerRole()
+    val stateWithNewRoles = state.rotatePlayerRole()
     val stateWithRightOrder =
       stateWithNewRoles.setBeginOfRoundOrder()
 
@@ -76,18 +87,34 @@ extension (st: State)
     stateWithNewShuffledDeck.assignCardsToPlayers().populateBlinds
 
 
-  //pas obligé de la faire elle est dure
-  def findWinner():UserId=
-    ???
+  
 
   /**
    * fais tout le nécéssaire pour finir le round
    * (trouves le winner, lui donnes largent)
    * applée juste avant startRound
+   * 
+   * Will find winner and add to his money the pot amount
+   * Will set pot to 0 ?
   **/
   def endRound():State=
-    ???
+    val State(gamePhase, gameInfo, deck, gameConfig) = state
+    require(gamePhase == GamePhase.EndRound)
+    
+    val winner = state.findWinner;
 
+    val players = gameInfo.players;
+   
+    //plus simple de faire une map? obligé bah de parcourir tt les joueurs
+    val playersUpdated = players.map(player =>
+      if player.getUserId() == winner then player.updateMoney(gameInfo.pot)
+        else player
+      )
+
+    //val updatedGameInfo = gameInfo.copy(pot = 0) 
+    val gameInfoUpdated = gameInfo.copy(players = playersUpdated)
+    val newState = state.copy(gameInfo = gameInfoUpdated)
+    newState.nextPhase() 
   /**
    * Populate the blind amount in functio of config
   **/
@@ -103,10 +130,71 @@ extension (st: State)
     ???
 
   /**
-   * Va a la nextPhase
+   * Va a la nextPhase, pas vrm besoin nn?
   **/
   def nextPhase():State=
-    ???
+    import GamePhase.*
+    //
+    state.gamePhase match
+      case PreFlop => state.copy(gamePhase = Flop)
+      case Flop => state.copy(gamePhase = Turn)
+      case Turn => state.copy(gamePhase = River)
+      case River => state.copy(gamePhase = EndRound)
+      case EndRound => 
+        if canGoNextPhase() then state.copy(gamePhase = PreFlop) 
+        else state.copy(gamePhase = EndGame)
+      case EndGame => state
+    
+    
+
+  /**
+    * Applies (naively) event updating only the money, the pot and status.
+    * 
+    * @TODO check if event is legal
+    *
+    * @param e
+    * @return
+    */
+  def applyEventNaive(e: Event) = ???
+
+
+  /**
+    * Transitions from a phase to another
+    *
+    * @return
+    */
+  def transitionPhase: State = ???
+
+  /**
+    * Distributes the pots to each player based on the algorithm.
+    *
+    * @param playingPlayers
+    * @return
+    */
+  def distributePots(playingPlayers: List[PlayerInfo]): State = ???
+
+  /**
+    * Find the winner of a given state.
+    *
+    * @return
+    */
+  def findWinner: UserId = ???
+
+  
+  /**
+    * Adds sentence to the log.
+    *
+    * @return
+    */
+  def addLog(str: String): List[String] = ???
+
+  /**
+    * Set the minimum raise at the beginning of the round.
+    * Always small blind.
+    *
+    * @return
+    */
+  def setMinRaise: State = ???
 
 extension( gi:GameInfo)
   def rotatePlayerTurnInternal()=
@@ -115,7 +203,7 @@ extension( gi:GameInfo)
       oldPlayers.drop(1).appended(oldPlayers.head)
     })
 
-
+  
   def rotatePlayerRolesInternal()=
     val players = gi.players
     val zippedPlayers = players.zipWithIndex
@@ -124,16 +212,16 @@ extension( gi:GameInfo)
 
     val newPlayers = lastBigBlind match
       case Some(bigBlind) =>
-        val indexOfBigBlind = bigBlind._2
+        val indexOfBigBlind = bigBlind._2 
         import apps.app77.Role.*
         zippedPlayers.map((p,i) =>
           p.getRole() match
             case Dealer => p.withRole(players((i-1) % players.length).getRole())
-            case SmallBlind(amount) => p.withRole(Dealer)
-            case BigBlind(amount) => p.withRole(SmallBlind(0))
+            case SmallBlind => p.withRole(Dealer)
+            case BigBlind => p.withRole(SmallBlind)
             case Normal =>
               if i == ((indexOfBigBlind + 1) % players.length) then
-                p.withRole(BigBlind(0))
+                p.withRole(BigBlind)
               else
                 p
 
