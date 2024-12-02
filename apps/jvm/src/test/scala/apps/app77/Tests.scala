@@ -16,18 +16,33 @@ class Tests extends WebappSuite[Event, State, View]:
   def provideBadEvent(): Event = ???
 
   val sm = Logic()
+  val wire = sm.wire
 
 
   // Define some typical user scenarios and the initialization of state
   lazy val initialState: State = sm.init(USER_IDS)
 
-  /** Test encoding and decoding of states and events */
-  test("Encoding and decoding tests for states and events") {
-    val sampleEvent = provideSampleEvent()
-    val sampleState = provideSampleState()
-    assert(sampleEvent.testEventWire == sampleEvent)
-    assert(sampleState.testViewWire == sampleState)
+  /** Test encoding and decoding of events */
+  test("Encoding and decoding for bet event") {
+    val betEvent = Event.Bet(100)
+    val json = wire.eventFormat.encode(betEvent)
+    println(json)
+    val decode = wire.eventFormat.decode(json)
+    println(decode)
+    assert(decode == betEvent, s"Expected: $betEvent, got: $decode")
   }
+
+  /** Test encoding and decoding of events */
+  test("Encoding and decoding for check event") {
+    val checkEvent = Event.Check()
+    val json = wire.eventFormat.encode(checkEvent)
+    println(json)
+    val decode = wire.eventFormat.decode(json)
+    println(decode)
+    assert(decode == checkEvent, s"Expected: $checkEvent, got: $decode")
+  }
+
+
 
   /** Example test for initial state of the application */
   test("Initial state validation") {
