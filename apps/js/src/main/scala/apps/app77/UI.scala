@@ -7,9 +7,9 @@ import scalatags.JsDom.all.*
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-@JSExportTopLevel("rps_text")
+@JSExportTopLevel("app77")
 object TextUI extends WSClientApp:
-  def appId: String = "poker"
+  def appId: String = "app77"
   def uiId: String =  "text"
 
   def init(userId: UserId, sendMessage: ujson.Value => Unit, target: Target): ClientAppInstance =
@@ -19,7 +19,7 @@ object TextUI extends WSClientApp:
 class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Target)
     extends graphics.TextClientAppInstance[Event, View](userId, sendMessage, target) {
 
-  override def wire: AppWire[Event, View] = null // Wire
+  override def wire: AppWire[Event, View] = Wire // Wire
 
   override def handleTextInput(view: View, text: String): Option[Event] = text.toLowerCase match {
     case "fold"  => Some(Event.Fold())        // Action pour se coucher

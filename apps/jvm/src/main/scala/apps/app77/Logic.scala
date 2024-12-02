@@ -15,10 +15,9 @@ class Logic extends StateMachine[Event, State, View]:
     year=2024
   )
   
-  override val wire = ???
+  override val wire = Wire
   
-  override def init(clients: Seq[UserId]): State = ???
+  override def init(clients: Seq[UserId]): State = null
 
-  override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] =   ??? 
-
-  override def project(state: State)(userId: UserId): View = ???
+  override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] =null
+  override def project(state: State)(userId: UserId): View = null
