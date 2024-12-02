@@ -13,6 +13,7 @@ object Wire extends AppWire[Event, View]:
 
   override object eventFormat extends WireFormat[Event] :
     override def encode(event: Event): Value = event match
+      
       case Check() => ujson.Obj("type" -> "check")
       case Fold()  => ujson.Obj("type" -> "fold")
       case Bet(amount) => ujson.Obj("type" -> "bet", "amount" -> ujson.Num(amount))
