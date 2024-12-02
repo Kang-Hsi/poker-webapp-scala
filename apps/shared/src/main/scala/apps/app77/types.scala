@@ -2,55 +2,94 @@ package apps.app77
 import upickle.default.*
 import cs214.webapp.*
 
-type Money = Int
-
-type Pot = Money
-
-type PlayerHand = Set[Card]
-
-type PlayerInfo = (UserId,Money, Role, Status, Option[PlayerHand], BetAmount)
-
-type BetAmount = Money
-
-type Round = Int
-
-enum Suit derives ReadWriter:
+/* Defining the cards. 
+ *
+ * The four suits.
+ */
+enum Suit:
   case Heart
   case Diamond
   case Spades
   case Clubs
 
+/* Card representation as a string.  */
 type CardRepresentation = String
 
+/* A (poker) card */
 type Card = (Suit, Int, CardRepresentation)
 
+/* A deck of cards */
 type Deck = List[Card]
 
-enum Status derives ReadWriter:
+/* Money in the game (only integers) */
+type Money = Int
+
+/* Pot of a poker round */
+type Pot = Money
+
+/* The hand (cards) of a player */
+type PlayerHand = Set[Card]
+
+/* Bet amount */
+type BetAmount = Money
+
+/* Rounds of a complete game of poker */
+type Round = Int
+
+/* The status of a player, playing or spectating */
+enum Status:
   case Playing
+  case AllIn
   case Spectating
 
-enum Role derives ReadWriter:
+/* The role of a player */
+enum Role:
   case Dealer
-  case SmallBlind(amount:Money)
-  case BigBlind(amout:Money)
+  case SmallBlind
+  case BigBlind
   case Normal
 
-enum Event derives ReadWriter:
+type hasTalked = Boolean
+
+type moneyBeforeRound = Money
+
+/* Complete nformation of a player */
+type PlayerInfo = (UserId, Money, Role,
+                  Status, Option[PlayerHand],
+                  BetAmount, hasTalked, moneyBeforeRound
+                  )
+
+
+/* The events a player can trigger */
+enum Event:
   case Check()
   case Fold()
-  case Bet(amount:Money)
+  case Bet(amount:Money) //used also for Call !!!!!!!
 
+
+case class GameConfig( 
+  maxRound: Round,
+  smallBlind: Int,
+  bigBlind: Int
+)
 
 case class View (
   gameInfo: GameInfo,
   gameConfig: GameConfig
-) derives ReadWriter
+)
 
-case class GameConfig(
-  maxRound: Round
-) derives ReadWriter
-
+/**
+  * The configuration/information of our poker game.
+  *
+  * @param players the list of players 
+  * @param roundNumber the number of rounds the game will last
+  * @param communalCards the communal cards (cards in the middle)
+  * @param pot the pot (size)
+  * @param logs the log of every action
+  * @param callAmount the call amount
+  * @param minRaise the minimum raise
+  * @param maxRaise the maximum raise
+  */
 case class GameInfo(
   players:List[PlayerInfo],//Ordered list where the 1st item is the current player. Client can be inferred by the Option of hand
   roundNumber : Round,
@@ -59,17 +98,8 @@ case class GameInfo(
   logs: List[String],//Logs with last entry being the most recent action
   callAmount: Money,
   minRaise: Money,
-  maxRaise:Money,
-) derives ReadWriter
-
-
-enum GamePhase derives ReadWriter:
-  case PreFlop
-  case Flop
-  case Turn
-  case River
-  case EndRound
-  case EndGame
+  maxRaise: Money,
+)
 
 
 case class State(
@@ -77,8 +107,15 @@ case class State(
   gameInfo: GameInfo,
   deck: Deck,
   gameConfig: GameConfig
-  ) derives ReadWriter
+  )
 
+enum GamePhase:
+  case PreFlop
+  case Flop
+  case Turn
+  case River
+  case EndRound
+  case EndGame
 
 
 
