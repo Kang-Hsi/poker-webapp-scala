@@ -5,7 +5,7 @@ import scala.util.{Failure, Success, Try}
 import ujson.Value
 
 
-object WireCopy extends AppWire[Event, View]:
+object Wire extends AppWire[Event, View]:
   import Event.*
   import View.*
   import ujson.*
