@@ -67,7 +67,7 @@ extension (state: State)
     *   skips spectacting
     */
   def setBeginOfRoundOrder() =
-    state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal())
+    state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal(state))
 
   /** To be called before the start of a round Will populize the state with a
     * new deck Will rotate the players roles & set the right order Will populate
@@ -198,7 +198,16 @@ extension (state: State)
     *
     * @return
     */
-  def findWinner: UserId = ???
+  def findWinner: UserId = 
+    val players = state.gameInfo.players
+    val allHands = players.flatMap{
+      player => 
+        if (player.isPlaying()) then player.getHand() 
+        else None
+    }
+
+    ???
+
 
   /** Adds sentence to the log.
     *
@@ -265,15 +274,30 @@ extension (gameInfo: GameInfo)
     gameInfo.copy(players = newPlayers)
 
   /**
-    * Returns game info with the order of the round.
-    * Small blind start
+    * Returns game info with players order of the round.
+    * For preflop player after big blind starts.
+    * For flop, turn, river blind starts.
     *
-    * @return
+    * @return gameInfo with players order of the round.
     */
-  def setBeginOfRoundOrderInternal() =
-    val player = gameInfo.players
-    val smallBlindIndex = player.indexWhere(player => player.isSmallBlind())
-    assert(smallBlindIndex >= 0, "No Small Blind Player ??")
-    gameInfo.copy(players =
-      player.drop(smallBlindIndex) ++ player.take(smallBlindIndex)
-    )
+  def setBeginOfRoundOrderInternal(state: State): GameInfo =
+    val players = gameInfo.players
+
+    val smallBlindPosition = players.indexWhere(player => player.isSmallBlind())
+    val bigBlindPosition = players.indexWhere(player => player.isBigBlind())
+
+    assert(smallBlindPosition >= 0, "No Small Blind?!")
+    assert(bigBlindPosition >= 0, "No Big Blind?!")
+
+    state.gamePhase match
+      case PreFlop =>
+        gameInfo.copy(players = 
+          players.drop(bigBlindPosition + 1) ++ players.take(bigBlindPosition + 1))
+
+      case Flop | Turn | River =>
+        
+        gameInfo.copy(players =
+          players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
+        )
+      
+      case EndRound | EndGame => state.gameInfo //should never happen

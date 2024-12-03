@@ -47,6 +47,9 @@ extension (p :PlayerInfo)
     def getRole()=
         p._3
 
+    def getHand()=
+        p._5
+
     def getStatus()=
         p._4
 
@@ -54,7 +57,7 @@ extension (p :PlayerInfo)
         p._7
 
     def isPlaying()=
-        p.getStatus() == Status.Playing
+        p.getStatus() == Status.Playing || p.getStatus() == Status.AllIn
     
     def isDealer()=
         p.getRole() == Role.Dealer
