@@ -28,7 +28,7 @@ extension (p :PlayerInfo)
     def withHasTalked(hasTalked: Boolean)=
         (p._1, p._2, p._3, p._4, p._5, p._6, hasTalked, p._8)
 
-    def withMoneyBeforeRound(moneyBeforeRound: Money)=
+    def withPotContribution(moneyBeforeRound: Money)=
         (p._1, p._2, p._3, p._4, p._5, p._6, p._7, moneyBeforeRound)
 
     
@@ -38,14 +38,26 @@ extension (p :PlayerInfo)
     def updateBetAmount(betAmountToAddOrSub : BetAmount)=
         p.withBetAmount(p._6 + betAmountToAddOrSub)
 
+    def updatePotContribution(potToAddOrSub: potContribution)=
+        p.withPotContribution(p.getPotContribution() + potToAddOrSub)
+
     def fold()=
         p.withStatus(Status.Spectating) //watch out , we might need to reset the betAmount
 
     def getUserId()=
         p._1
 
+    def getMoney()=
+        p._2
+
     def getRole()=
         p._3
+
+    def getBetAmount()=
+        p._6
+
+    def getPotContribution()=
+        p._8
 
     def getHand()=
         p._5
@@ -58,6 +70,12 @@ extension (p :PlayerInfo)
 
     def isPlaying()=
         p.getStatus() == Status.Playing || p.getStatus() == Status.AllIn
+
+    def isOnlyAllIn() =
+      p.getStatus() == Status.AllIn
+
+    def isOnlyPlaying() =
+      p.getStatus() == Status.Playing
     
     def isDealer()=
         p.getRole() == Role.Dealer

@@ -50,12 +50,12 @@ enum Role:
 
 type hasTalked = Boolean
 
-type moneyBeforeRound = Money
+type potContribution = Money
 
 /* Complete nformation of a player */
 type PlayerInfo = (UserId, Money, Role,
                   Status, Option[PlayerHand],
-                  BetAmount, hasTalked, moneyBeforeRound
+                  BetAmount, hasTalked, potContribution
                   )
 
 
