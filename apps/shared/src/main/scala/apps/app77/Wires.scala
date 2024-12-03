@@ -28,6 +28,14 @@ object WireCopy extends AppWire[Event, View]:
     }
 
   override object viewFormat extends WireFormat[View] :
+    
+    override def encode(view: View): Value = ujson.Arr(encodeGameInfo(view.gameInfo), encodeGameConfig(view.gameConfig))
+    override def decode(json: Value): Try[View] = Try{
+      val arr = json.arr
+      val gameInfo = decodeGameInfo(arr(0)).get
+      val gameConfig = decodeGameConfig(arr(1)).get
+      View(gameInfo, gameConfig)
+    }
 
     def encodeSuit(suit : Suit) : Value = suit match
       case Suit.Heart => ujson.Str("heart")
@@ -101,14 +109,6 @@ object WireCopy extends AppWire[Event, View]:
       new PlayerInfo(userId, money, role, status, playerHand, betAmount, hasTalked, moneyBeforeRound)
     }
 
-    override def encode(view: View): Value = ujson.Arr(encodeGameInfo(view.gameInfo), encodeGameConfig(view.gameConfig))
-    override def decode(json: Value): Try[View] = Try{
-      val arr = json.arr
-      val gameInfo = decodeGameInfo(arr(0)).get
-      val gameConfig = decodeGameConfig(arr(1)).get
-      View(gameInfo, gameConfig)
-    }
-
     def encodeGameConfig(gameConfig : GameConfig) : Value = ujson.Arr(
       ujson.Num(gameConfig.maxRound),
       ujson.Num(gameConfig.smallBlind),
@@ -124,7 +124,7 @@ object WireCopy extends AppWire[Event, View]:
     }
 
 
-    def encodeGameInfo(gameInfo : GameInfo) : Value = 
+    def encodeGameInfo(gameInfo : GameInfo) : Value =
       ujson.Arr(
         ujson.Arr(gameInfo.players.map(player => encodePlayerInfo(player))),
         ujson.Num(gameInfo.roundNumber),
@@ -135,7 +135,7 @@ object WireCopy extends AppWire[Event, View]:
         ujson.Num(gameInfo.minRaise),
         ujson.Num(gameInfo.maxRaise)
       )
-    def decodeGameInfo(json: Value): Try[GameInfo] = Try{ 
+    def decodeGameInfo(json: Value): Try[GameInfo] = Try{
       val arr = json.arr
       val players = arr(0).arr.map(j => decodePlayerInfo(j).get).toList
       val roundNumber = arr(1).num.toInt
@@ -155,7 +155,7 @@ object WireCopy extends AppWire[Event, View]:
         ujson.Arr(state.deck.map(card => encodeCard(card))),
         encodeGameConfig(state.gameConfig)
       )
-      
+
     def decodeState(json: Value): Try[State] = Try{
       val arr = json.arr
       val gamePhase = decodeGamePhase(arr(0)).get
