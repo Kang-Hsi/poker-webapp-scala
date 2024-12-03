@@ -17,7 +17,7 @@ class Logic extends StateMachine[Event, State, View]:
   )
 
 
-  override val wire = Wire
+  override val wire = WireCopy
 
   override def init(clients: Seq[UserId]): State = 
     State(
