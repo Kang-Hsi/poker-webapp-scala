@@ -148,7 +148,7 @@ class StateHelperTests extends FunSuite :
         val roles = trickyRoles ++ normal
 
         val listIDs = createUserIds(numberOfPlayers).toSeq
-        val queueIDs = Queue(listIDs)
+        val queueIDs = Queue(listIDs*)
 
         val initalState = createInitialState(listIDs)
 
@@ -158,7 +158,7 @@ class StateHelperTests extends FunSuite :
         val queueIDsRotated = queueIDs.enqueue(queueIDs.dequeue())
         val mapIDRoleQueue  = queueIDsRotated.zip(roles)
 
-        assert(mapIDRoleQueue == mapIdRoleUpdated)
+        assertEquals(mapIdRoleUpdated.sortBy((name, role) => name), mapIDRoleQueue.toList.sortBy((name, role) => name))
 
 
 
