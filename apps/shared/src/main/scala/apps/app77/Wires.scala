@@ -3,16 +3,9 @@ package apps.app77
 import cs214.webapp.*
 import scala.util.{Failure, Success, Try}
 import ujson.Value
-import upickle.default.*
-import apps.app77.Wire.viewFormat.encodeGameInfo
-import apps.app77.Wire.viewFormat.encodeCard
-import apps.app77.Wire.viewFormat.encodeGameConfig
-import apps.app77.Wire.viewFormat.decodeGameInfo
-import apps.app77.Wire.viewFormat.decodeGameConfig
 
 
-
-object Wire extends AppWire[Event, View]:
+object WireCopy extends AppWire[Event, View]:
   import Event.*
   import View.*
   import ujson.*
@@ -35,16 +28,86 @@ object Wire extends AppWire[Event, View]:
     }
 
   override object viewFormat extends WireFormat[View] :
-    override def encode(view: View): Value = upickle.default.write(view)
-    override def decode(json: Value): Try[View] = Try(upickle.default.read[View](json))
 
-    def encodeSuit(suit : Suit) : Value = ???
-    def encodeCard(card : Card) : Value = ???
-    def encodeHand(hand : PlayerHand) : Value = ???
-    def encodeStatus(status : Status) : Value = ???
-    def encodeRole(role : Role) : Value = ???
-    def encodePlayerInfo(playerInfo : PlayerInfo) : Value = ???
+    def encodeSuit(suit : Suit) : Value = suit match
+      case Suit.Heart => ujson.Str("heart")
+      case Suit.Diamond => ujson.Str("diamond")
+      case Suit.Spades => ujson.Str("spades")
+      case Suit.Clubs => ujson.Str("clubs")
 
+    def decodeSuit(json : Value) : Try[Suit] = Try { json.str match
+      case "heart" => Suit.Heart
+      case "diamond" => Suit.Diamond
+      case "spades" => Suit.Spades
+      case "clubs" => Suit.Clubs
+      case _ => throw new IllegalArgumentException("Unknown suit")
+    }
+
+    def encodeCard(card : Card) : Value = ujson.Arr(encodeSuit(card._1), ujson.Num(card._2), ujson.Str(card._3))
+
+    def decodeCard(ujson : Value) : Try[Card] = Try {
+      val array = ujson.arr
+      val suit = decodeSuit(array(0)).get
+      val value = array(1).num.toInt
+      val representation = array(2).str
+      new Card(suit, value, representation)
+    }
+    def encodeHand(hand : PlayerHand) : Value = ujson.Arr(hand.map(card => encodeCard(card)))
+    def decodeHand(ujson : Value) : Try[PlayerHand] = Try {
+      val array = ujson.arr
+      (array.map(ujson => decodeCard(ujson).get).toSet)
+    }
+
+    def encodeStatus(status : Status) : Value = status match
+      case Status.Playing => ujson.Str("playing")
+      case Status.Spectating => ujson.Str("spectating")
+      case Status.AllIn => ujson.Str("AllIn")
+    def decodeStatus(ujson : Value) : Try[Status] = Try { ujson.str match
+      case "playing" => Status.Playing
+      case "spectating" => Status.Spectating
+      case "AllIn" => Status.AllIn
+      case _ => throw new IllegalArgumentException("Unknown status")
+    }
+
+    def encodeRole(role : Role) : Value = role match
+      case Role.Dealer => ujson.Str("dealer")
+      case Role.SmallBlind => ujson.Str("smallBlind")
+      case Role.BigBlind => ujson.Str("bigBlind")
+      case Role.Normal => ujson.Str("normal")
+
+    def decodeRole(ujson : Value) : Try[Role] =  Try { ujson.str match
+      case "dealer" => Role.Dealer
+      case "smallBlind" => Role.SmallBlind
+      case "bigBlind" => Role.BigBlind
+      case "normal" => Role.Normal
+      case _ => throw new IllegalArgumentException("Unknown role")
+    }
+
+
+    def encodePlayerInfo(playerInfo : PlayerInfo) : Value = ujson.Arr(
+      ujson.Str(playerInfo._1), ujson.Num(playerInfo._2), encodeRole(playerInfo._3),
+      encodeStatus(playerInfo._4), playerInfo._5.encodeOption(hand => encodeHand(hand)),ujson.Num(playerInfo._6), ujson.Bool(playerInfo._7), ujson.Num(playerInfo._8))
+
+    def decodePlayerInfo(ujson: Value): Try[PlayerInfo] = Try {
+      val arr = ujson.arr
+      val userId = arr(0).str
+      val money = arr(1).num.toInt
+      val role = decodeRole(arr(2)).get
+      val status = decodeStatus(arr(3)).get
+      val playerHand = arr(4).decodeOption(decodeHand).get
+      val betAmount = arr(5).num.toInt
+      val hasTalked = arr(6).bool
+      val moneyBeforeRound = arr(7).num.toInt
+      new PlayerInfo(userId, money, role, status, playerHand, betAmount, hasTalked, moneyBeforeRound)
+    }
+
+    override def encode(view: View): Value = ujson.Arr(encodeGameInfo(view.gameInfo), encodeGameConfig(view.gameConfig))
+    override def decode(json: Value): Try[View] = Try{
+      val arr = json.arr
+      val gameInfo = decodeGameInfo(arr(0)).get
+      val gameConfig = decodeGameConfig(arr(1)).get
+      View(gameInfo, gameConfig)
+    }
 
     def encodeGameConfig(gameConfig : GameConfig) : Value = ujson.Arr(
       ujson.Num(gameConfig.maxRound),
@@ -84,12 +147,6 @@ object Wire extends AppWire[Event, View]:
       val maxRaise = arr(7).num.toInt
       GameInfo(players, roundNumber, communalCards, pot, logs, callAmount, minRaise, maxRaise)
       }
-case class State(
-  gamePhase: GamePhase,
-  gameInfo: GameInfo,
-  deck: Deck,
-  gameConfig: GameConfig
-  )
 
     def encodeState(state : State) : Value =
       ujson.Arr(
@@ -126,128 +183,15 @@ case class State(
         case "EndRound" => GamePhase.EndRound
         case "EndGame" => GamePhase.EndGame
     }
-    
-    
+    extension(ujson: Value)
+      def decodeOption[T](decode : Value => Try[T]) : Try[Option[T]] = Try {
+        val obj = ujson.obj
+        obj("type").str match
+          case "none" => None
+          case "some" => Some(decode(obj("value")).get)
+      }
 
-
-   /*
-   package apps.app77
-import upickle.default.*
-import cs214.webapp.*
-
-/* Defining the cards.
- *
- * The four suits.
- */
-enum Suit:
-  case Heart
-  case Diamond
-  case Spades
-  case Clubs
-
-/* Card representation as a string.  */
-type CardRepresentation = String
-
-/* A (poker) card */
-type Card = (Suit, Int, CardRepresentation)
-
-/* A deck of cards */
-type Deck = List[Card]
-
-/* Money in the game (only integers) */
-type Money = Int
-
-/* Pot of a poker round */
-type Pot = Money
-
-/* The hand (cards) of a player */
-type PlayerHand = Set[Card]
-
-/* Bet amount */
-type BetAmount = Money
-
-/* Rounds of a complete game of poker */
-type Round = Int
-
-/* The status of a player, playing or spectating */
-enum Status:
-  case Playing
-  case AllIn
-  case Spectating
-
-/* The role of a player */
-enum Role:
-  case Dealer
-  case SmallBlind
-  case BigBlind
-  case Normal
-
-type hasTalked = Boolean
-
-type moneyBeforeRound = Money
-
-/* Complete nformation of a player */
-type PlayerInfo = (UserId, Money, Role,
-                  Status, Option[PlayerHand],
-                  BetAmount, hasTalked, moneyBeforeRound
-                  )
-
-
-/* The events a player can trigger */
-enum Event:
-  case Check()
-  case Fold()
-  case Bet(amount:Money) //used also for Call !!!!!!!
-
-
-case class GameConfig(
-  maxRound: Round,
-  smallBlind: Int,
-  bigBlind: Int
-)
-
-case class View (
-  gameInfo: GameInfo,
-  gameConfig: GameConfig
-)
-
-/**
-  * The configuration/information of our poker game.
-  *
-  * @param players the list of players
-  * @param roundNumber the number of rounds the game will last
-  * @param communalCards the communal cards (cards in the middle)
-  * @param pot the pot (size)
-  * @param logs the log of every action
-  * @param callAmount the call amount
-  * @param minRaise the minimum raise
-  * @param maxRaise the maximum raise
-  */
-case class GameInfo(
-  players:List[PlayerInfo],//Ordered list where the 1st item is the current player. Client can be inferred by the Option of hand
-  roundNumber : Round,
-  communalCards : List[Card],
-  pot: Pot,
-  logs: List[String],//Logs with last entry being the most recent action
-  callAmount: Money,
-  minRaise: Money,
-  maxRaise: Money,
-)
-
-
-case class State(
-  gamePhase: GamePhase,
-  gameInfo: GameInfo,
-  deck: Deck,
-  gameConfig: GameConfig
-  )
-
-enum GamePhase:
-  case PreFlop
-  case Flop
-  case Turn
-  case River
-  case EndRound
-  case EndGame
- */
-
+    extension[T](option : Option[T])
+      def encodeOption(encode : T => Value) : Value = option match
+        case None => ujson.Obj("type" -> "none")
+        case Some(value) => ujson.Obj("type" -> "some", "value" -> encode(value))
