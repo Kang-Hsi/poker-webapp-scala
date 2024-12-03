@@ -12,11 +12,11 @@ class StateHelperTests extends FunSuite :
         playerIds.zipWithIndex.map { case (userId, index) =>
             val role = index match {
             case 0 => Role.Dealer
-            case 1 => Role.SmallBlind(config.getInitialChipIn)
-            case 2 => Role.BigBlind(2 * config.getInitialChipIn)
+            case 1 => Role.SmallBlind
+            case 2 => Role.BigBlind
             case _ => Role.Normal
             }
-            (userId, config.getInitialMoney, role, Status.Playing, None: Option[PlayerHand], 0)
+            (userId, config.getInitialMoney, role, Status.Playing, None: Option[PlayerHand], 0, false, config.getInitialMoney)
         }.toList
 
     def createInitialGameInfo(players: List[PlayerInfo])(using config : Configuration): GameInfo =
@@ -26,8 +26,8 @@ class StateHelperTests extends FunSuite :
             communalCards = List.empty,
             pot = 0,
             logs = List("Game initialized"),
-            callAmount = config.getInitialChipIn,
-            minRaise = config.getInitialChipIn,
+            callAmount = config.getSmallBlind,
+            minRaise = config.getSmallBlind,
             maxRaise = config.getInitialMoney
         )
 
@@ -39,23 +39,23 @@ class StateHelperTests extends FunSuite :
             gamePhase = GamePhase.PreFlop,
             gameInfo = gameInfo,
             deck = shuffledDeck,
-            gameConfig = GameConfig(config.getMaxRound)
+            gameConfig = GameConfig(config.getMaxRound, config.getSmallBlind, config.getBigBlind)
         )
 
     def createUserIds(numPlayers: Int, prefix: String = "Player"): List[UserId] =
         List.tabulate(numPlayers)(i => s"$prefix$i")
 
-    test("assignCardsToPlayers should remove cards from the deck (we don't waist any card)") :
+    test("distributeCardsToPlayers should remove cards from the deck (we don't waist any card)") :
         val numberOfPlayers = 4
         val initialState = createInitialState(createUserIds(numPlayers = 4))
-        val updatedState = initialState.assignCardsToPlayers()
+        val updatedState = initialState.distributeCardsToPlayers()
         val numberOfCardsDistributed = 2 * numberOfPlayers
         assert(updatedState.deck.size == initialState.deck.size - numberOfCardsDistributed)
 
-    test("assignCardsToPlayers: each player should have two cards in their hand") :
+    test("distributeCardsToPlayers: each player should have two cards in their hand") :
         val numberOfPlayers = 4
         val initialState = createInitialState(createUserIds(numPlayers = 4))
-        val updatedState = initialState.assignCardsToPlayers()
+        val updatedState = initialState.distributeCardsToPlayers()
         assert(
             updatedState.gameInfo.players.forall(playerInfo => playerInfo._5.isDefined && playerInfo._5.get.size == 2)
         )
@@ -96,7 +96,7 @@ class StateHelperTests extends FunSuite :
         val thirdPlayerUpdated = updatedState.gameInfo.players(2)
         assert(lastPlayerInit == thirdPlayerUpdated, "The last player should now be the third player.")
 
-    test("rotatePlayerRole: the dealer should become the normal (with 4 players)") :
+    test("rotatePlayerRole: the dealer should become Normal (with 4 players)") :
         var initialState = createInitialState(createUserIds(numPlayers = 4))
         var dealer = initialState.gameInfo.players.find(p => p.isDealer()).get
         for (_ <- 0 to 3)
@@ -117,7 +117,7 @@ class StateHelperTests extends FunSuite :
             smallBlind = initialState.gameInfo.players.find(p => p.isSmallBlind()).get
     }
 
-    test("rotatePlayerRole: Big Blind should become Small Blind after full rotation") :
+    test("rotatePlayerRole: Big Blind should become Small Blid after full rotation") :
         var initalState = createInitialState(createUserIds(numPlayers = 4))
         var bigBlind = initalState.gameInfo.players.find(p => p.isBigBlind()).get
 

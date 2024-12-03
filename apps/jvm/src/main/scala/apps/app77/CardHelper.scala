@@ -19,7 +19,7 @@ object CardHelper:
 )
 
   /**
-   * The basic ordonned deck of cards
+   * The basic ordered deck of cards
 **/
   val allCards: Deck =
     val repr = allRepresentations.iterator
