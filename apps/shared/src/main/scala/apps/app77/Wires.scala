@@ -4,6 +4,12 @@ import cs214.webapp.*
 import scala.util.{Failure, Success, Try}
 import ujson.Value
 import upickle.default.*
+import apps.app77.Wire.viewFormat.encodeGameInfo
+import apps.app77.Wire.viewFormat.encodeCard
+import apps.app77.Wire.viewFormat.encodeGameConfig
+import apps.app77.Wire.viewFormat.decodeGameInfo
+import apps.app77.Wire.viewFormat.decodeGameConfig
+
 
 
 object Wire extends AppWire[Event, View]:
@@ -38,10 +44,90 @@ object Wire extends AppWire[Event, View]:
     def encodeStatus(status : Status) : Value = ???
     def encodeRole(role : Role) : Value = ???
     def encodePlayerInfo(playerInfo : PlayerInfo) : Value = ???
-    def encodeGameConfig(gameConfig : GameConfig) : Value = ???
-    def encodeGameInfo(gameInfo : GameInfo) : Value = ???
-    def encodeState(state : State) : Value = ???
-    def encodeGamePhase(gamePhase : GamePhase) : Value = ???
+
+
+    def encodeGameConfig(gameConfig : GameConfig) : Value = ujson.Arr(
+      ujson.Num(gameConfig.maxRound),
+      ujson.Num(gameConfig.smallBlind),
+      ujson.Num(gameConfig.bigBlind)
+    )
+
+    def decodeGameConfig(json: Value): Try[GameConfig] = Try{
+      val arr = json.arr
+      val maxRound = arr(0).num.toInt
+      val smallBlind = arr(1).num.toInt
+      val bigBlind = arr(2).num.toInt
+      GameConfig(maxRound, smallBlind, bigBlind)
+    }
+
+
+    def encodeGameInfo(gameInfo : GameInfo) : Value = 
+      ujson.Arr(
+        ujson.Arr(gameInfo.players.map(player => encodePlayerInfo(player))),
+        ujson.Num(gameInfo.roundNumber),
+        ujson.Arr(gameInfo.communalCards.map(card => encodeCard(card))),
+        ujson.Num(gameInfo.pot),
+        ujson.Arr(gameInfo.logs.map(log => ujson.Str(log))),
+        ujson.Num(gameInfo.callAmount),
+        ujson.Num(gameInfo.minRaise),
+        ujson.Num(gameInfo.maxRaise)
+      )
+    def decodeGameInfo(json: Value): Try[GameInfo] = Try{ 
+      val arr = json.arr
+      val players = arr(0).arr.map(j => decodePlayerInfo(j).get).toList
+      val roundNumber = arr(1).num.toInt
+      val communalCards = arr(2).arr.map(j => decodeCard(j).get).toList
+      val pot = arr(3).num.toInt
+      val logs = arr(4).arr.map(j => j.str).toList
+      val callAmount = arr(5).num.toInt
+      val minRaise = arr(6).num.toInt
+      val maxRaise = arr(7).num.toInt
+      GameInfo(players, roundNumber, communalCards, pot, logs, callAmount, minRaise, maxRaise)
+      }
+case class State(
+  gamePhase: GamePhase,
+  gameInfo: GameInfo,
+  deck: Deck,
+  gameConfig: GameConfig
+  )
+
+    def encodeState(state : State) : Value =
+      ujson.Arr(
+        encodeGamePhase(state.gamePhase),
+        encodeGameInfo(state.gameInfo),
+        ujson.Arr(state.deck.map(card => encodeCard(card))),
+        encodeGameConfig(state.gameConfig)
+      )
+      
+    def decodeState(json: Value): Try[State] = Try{
+      val arr = json.arr
+      val gamePhase = decodeGamePhase(arr(0)).get
+      val gameInfo = decodeGameInfo(arr(1)).get
+      val deck = arr(2).arr.map(j => decodeCard(j).get).toList
+      val gameConfig = decodeGameConfig(arr(3)).get
+      State(gamePhase, gameInfo, deck, gameConfig)
+    }
+
+
+    def encodeGamePhase(gamePhase : GamePhase) : Value = gamePhase match
+      case GamePhase.PreFlop => ujson.Str("PreFlop")
+      case GamePhase.Flop => ujson.Str("Flop")
+      case GamePhase.Turn => ujson.Str("Turn")
+      case GamePhase.River => ujson.Str("River")
+      case GamePhase.EndRound => ujson.Str("EndRound")
+      case GamePhase.EndGame => ujson.Str("EndGame")
+    def decodeGamePhase(json: Value): Try[GamePhase] = Try{
+      val obj = json.obj
+      obj("type").str match
+        case "PreFlop" => GamePhase.PreFlop
+        case "Flop" => GamePhase.Flop
+        case "Turn" => GamePhase.Turn
+        case "River" => GamePhase.River
+        case "EndRound" => GamePhase.EndRound
+        case "EndGame" => GamePhase.EndGame
+    }
+    
+    
 
 
    /*
