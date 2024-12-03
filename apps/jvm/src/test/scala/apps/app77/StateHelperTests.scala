@@ -45,17 +45,17 @@ class StateHelperTests extends FunSuite :
     def createUserIds(numPlayers: Int, prefix: String = "Player"): List[UserId] =
         List.tabulate(numPlayers)(i => s"$prefix$i")
 
-    test("assignCardsToPlayers should remove cards from the deck (we don't waist any card)") :
+    test("distributeCardsToPlayers should remove cards from the deck (we don't waist any card)") :
         val numberOfPlayers = 4
         val initialState = createInitialState(createUserIds(numPlayers = 4))
-        val updatedState = initialState.assignCardsToPlayers()
+        val updatedState = initialState.distributeCardsToPlayers()
         val numberOfCardsDistributed = 2 * numberOfPlayers
         assert(updatedState.deck.size == initialState.deck.size - numberOfCardsDistributed)
 
-    test("assignCardsToPlayers: each player should have two cards in their hand") :
+    test("distributeCardsToPlayers: each player should have two cards in their hand") :
         val numberOfPlayers = 4
         val initialState = createInitialState(createUserIds(numPlayers = 4))
-        val updatedState = initialState.assignCardsToPlayers()
+        val updatedState = initialState.distributeCardsToPlayers()
         assert(
             updatedState.gameInfo.players.forall(playerInfo => playerInfo._5.isDefined && playerInfo._5.get.size == 2)
         )
@@ -96,7 +96,7 @@ class StateHelperTests extends FunSuite :
         val thirdPlayerUpdated = updatedState.gameInfo.players(2)
         assert(lastPlayerInit == thirdPlayerUpdated, "The last player should now be the third player.")
 
-    test("rotatePlayerRole: the dealer should become the Small Blind (with 4 players)") :
+    test("rotatePlayerRole: the dealer should become Normal (with 4 players)") :
         var initialState = createInitialState(createUserIds(numPlayers = 4))
         var dealer = initialState.gameInfo.players.find(p => p.isDealer()).get
         for (_ <- 0 to 3)
@@ -106,7 +106,7 @@ class StateHelperTests extends FunSuite :
             initialState = updatedState
             dealer = initialState.gameInfo.players.find(p => p._3 == Role.Dealer).get
 
-    test("rotatePlayerRole: Small Blind should become Big Blind after full rotation") :
+    test("rotatePlayerRole: Small Blind should become Dealer after full rotation") :
         var initialState = createInitialState(createUserIds(numPlayers = 4))
         var smallBlind = initialState.gameInfo.players.find(p => p.isSmallBlind()).get
         for (_ <- 0 to 3) {
@@ -117,7 +117,7 @@ class StateHelperTests extends FunSuite :
             smallBlind = initialState.gameInfo.players.find(p => p.isSmallBlind()).get
     }
 
-    test("rotatePlayerRole: Big Blind should become Normal after full rotation") :
+    test("rotatePlayerRole: Big Blind should become Small Blid after full rotation") :
         var initalState = createInitialState(createUserIds(numPlayers = 4))
         var bigBlind = initalState.gameInfo.players.find(p => p.isBigBlind()).get
 
@@ -129,7 +129,7 @@ class StateHelperTests extends FunSuite :
             bigBlind = initalState.gameInfo.players.find(p => p.isBigBlind()).get
         }
 
-    test("rotatePlayerRole: Normal player should become Dealer after full rotation") :
+    test("rotatePlayerRole: Normal player should become Big Blind after full rotation") :
         var initalState = createInitialState(createUserIds(numPlayers = 4))
         var normal = initalState.gameInfo.players.find(p => p.isNormal()).get
 

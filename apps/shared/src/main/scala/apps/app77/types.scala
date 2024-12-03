@@ -1,5 +1,4 @@
 package apps.app77
-import upickle.default.*
 import cs214.webapp.*
 
 /* Defining the cards. 
