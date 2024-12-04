@@ -202,7 +202,22 @@ extension (state: State)
     // update the pot
     val newPot = oldPot + betsOfPlayers
     // resetTheBetAmount of the players
-    ???
+    
+    val playersWithZeroBetAmount = players.map(p => p.withBetAmount(0))
+    
+    val preTransitionnedState = state.copy(
+      gameInfo = state.gameInfo.copy(
+        players = playersWithZeroBetAmount,
+        pot = newPot
+      )
+    )
+
+    preTransitionnedState.gamePhase match
+      case PreFlop => preTransitionnedState.goToFlop()
+      case Flop => preTransitionnedState.goToTurn()
+      case Turn => preTransitionnedState.goToRiver()
+      case River => preTransitionnedState.goToEndRound()
+      case _ => throw Exception("the transition shouldn't be called in endRound / endGame as they are only 'ephemeral' states")      
 
   /** Distributes the pots to each player based on the algorithm.
    *  See the documentation of distributePotsInternal for more accurate info
@@ -214,10 +229,45 @@ extension (state: State)
     state.copy(gameInfo = state.gameInfo.distributePotInternal(playingPlayers))    
 
 
-  def skipToEndRound(): Seq[State]=
+  def goToEndRound(): Seq[State]=
     ???
+  
+  /**
+   * Method that handles the transitition to go to flop
+  **/
+  def goToFlop()=
+    val communal = state.gameInfo.communalCards
     
 
+  def goToTurn()=
+    ???
+
+  def goToRiver()=
+    ???
+
+  /**
+   * Method that adds cards to the communal cards
+   * util the number of communal cards gets to the
+   * input
+  **/
+  def addCommunal(outputCommunalCardLength: Int):State=
+    val communal = state.gameInfo.communalCards 
+    if communal.length > outputCommunalCardLength then
+      throw Exception("the state has too many communal cards, there is a discordancy beetween the gamePhase, and its real phase")
+    else
+      val cardsToAdd = outputCommunalCardLength - communal.length
+      println("INFO : adding " + cardsToAdd + " cards to the communal cards.")
+      
+      val newDeck = state.deck.drop(cardsToAdd)
+      val newCommunal =
+        state.gameInfo.communalCards ++ state.deck.take(cardsToAdd)
+
+      state.copy(
+        deck = newDeck,
+        gameInfo = state.gameInfo.copy(
+          communalCards = newCommunal
+        )
+      )
   
   /** Adds sentence to the log.
     *
