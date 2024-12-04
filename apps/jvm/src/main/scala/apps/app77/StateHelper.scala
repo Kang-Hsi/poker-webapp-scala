@@ -290,9 +290,14 @@ extension (state: State)
     */
   def setMinRaise: State = ???
 
-  def hasEveryoneTalked:Boolean= ???
+  def hasEveryoneTalked:Boolean= 
+    state.gameInfo.players.forall(p =>
+        p.hasTalked()
+        )
 
-  def hasEveryoneBettedSameAmount:Boolean = ???
+  def hasEveryoneBettedSameAmount:Boolean = 
+    val betAmounts = state.gameInfo.players.map(_.getBetAmount())
+    betAmounts.forall(a => a == betAmounts.head)
 
 extension (gameInfo: GameInfo)
 
