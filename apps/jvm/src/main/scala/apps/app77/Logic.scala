@@ -49,7 +49,7 @@ class Logic extends StateMachine[Event, State, View]:
       then
 
         println("INFO : We are skipping to endRound because only one player is left")
-        renderTheStates(stateWithActionNaive.skipToEndRound())
+        renderTheStates(stateWithActionNaive.goToEndRound()) //TODO verify that the goToEndRoudn satifies all ; i did not checked
 
       else
 

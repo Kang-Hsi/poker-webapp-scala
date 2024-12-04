@@ -187,7 +187,7 @@ extension (state: State)
         val allPlaying = state.gameInfo.getAllPlayingPlayers
         if allPlaying.length == 1 then throw IllegalMoveException("You cannot fold if you are the last one playing / all'd in")
 
-        state.applyFold(user)
+        state.applyFold(user,userIndex)
       case Event.Check() => 
         //in which cases a player cannot check ?
         //1 - if he has not got the correct bet amount
@@ -195,12 +195,14 @@ extension (state: State)
         if players(userIndex).getBetAmount() < state.getCallAmount()
         then throw IllegalMoveException("You cannot check, as you need to bet more money to call")
         
-        state.applyCheck(user)
+        state.applyCheck(user, userIndex)
 
       case Event.Bet(amount) =>
         //in which cases we cannot bet ?
         // 1 - if the amount we bet is outside how much money we have
         // TODO what else?
+        //
+        assert(amount > 0, IllegalMoveException("cannot bet <= 0"))
         
         if players(userIndex).getMoney() < amount then throw IllegalMoveException("Not enough money")
 
@@ -208,32 +210,83 @@ extension (state: State)
         then
           if players(userIndex).getMoney() == amount then
             //we are in all in 
-            state.applyAllIn(user)
+            state.applyAllIn(user, userIndex, amount, false)
           else
             throw IllegalMoveException("Not enough money to call, and not an all in neither")
 
         else
-          //we should be good
-          state.applyBet(user,event)
+          val overBetting = players(userIndex).getBetAmount() + amount > state.getCallAmount()
+          if players(userIndex).getMoney() == amount then
+            state.applyAllIn(user,userIndex, amount, overBetting)
+          else
+            //we should be good
+            state.applyBet(user, userIndex,amount, Status.Playing, overBetting )
           
-
-        
 
 
   /**
    * Applies the event given. Does not check if the event is valid, the check must be done before
   **/
-  def applyFold(user:UserId):State=
+  def applyFold(user:UserId, index:Int):State=
+    println("INFO : " + user + " is folding.")
+    state
+      .withPlayerUpdateStatus(index, Status.Spectating)
+      .withPlayerHasTalked(index, true)
+      .rotatePlayerTurn()
+
+
+  def applyCheck(user:UserId, index: Int)=
+    println("INFO : " + user + " is checking.")
+    state.withPlayerHasTalked(index, true).rotatePlayerTurn()
+
+
+  def applyBet(user:UserId, index:Int, amount:Money, newStatus: Status, overBetting: Boolean)=
+    println("INFO : " + user + " is betting / calling.")
+    
+    extension (s:State)
+      def resetOrNotTheTalked()=
+        if overBetting then
+          s.withNoPlayersTalked()
+        else
+          s
+
+    state
+      .withPlayerUpdateMoney(index, -amount)
+      .withPlayerUpdateBet(index, amount)
+      .withPlayerUpdateStatus(index, newStatus)
+      .resetOrNotTheTalked()
+      .withPlayerHasTalked(index, true)
+      .rotatePlayerTurn()
+
+
+  def applyAllIn(user:UserId, index: Int, amount: Money, overBetting: Boolean)=
+    println("INFO : " + user + " is alling in !")
+    state.applyBet(user,index,amount,Status.AllIn, overBetting) 
+  /**
+   * Sets all the players to no talk
+  **/
+  def withNoPlayersTalked():State=
     ???
 
-  def applyCheck(user:UserId)=
+  def withPlayerUpdateStatus(userIndex: Int, newStatus: Status):State=
     ???
 
-  def applyBet(user:UserId, event:Event)=
-    ???
+  def withPlayerUpdateBet(userIndex:Int, amount:Money):State=
+    ???    
 
-  def applyAllIn(user:UserId)=
-    ???
+  def withPlayerUpdateMoney(userIndex: Int, moneyToAddOrSub: Money):State=
+  ???
+
+  def withPlayerHasTalked(userIndex:Int, hasTalked : Boolean):State=
+    def gameInfo = state.gameInfo
+    state.copy(
+      gameInfo = gameInfo.copy(
+        players = gameInfo.players.updated(
+          userIndex,
+          gameInfo.players(userIndex).withHasTalked(hasTalked)
+          )
+        )
+      )
 
   /**
    * Gets the call amount
@@ -263,7 +316,7 @@ extension (state: State)
     val newPot = oldPot + betsOfPlayers
     // resetTheBetAmount of the players
     
-    val playersWithZeroBetAmount = players.map(p => p.withBetAmount(0).withHasTalked(false))
+    val playersWithZeroBetAmount = players.map(p => p.withBetAmount(0).withHasTalked(false)) //here we reset the talked like this, bu we could have called the method resettalked
     
     val preTransitionnedState = state.copy(
       gameInfo = state.gameInfo.copy(
