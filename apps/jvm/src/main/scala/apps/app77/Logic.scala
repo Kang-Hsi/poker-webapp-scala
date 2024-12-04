@@ -68,9 +68,10 @@ class Logic extends StateMachine[Event, State, View]:
           renderTheStates(states) 
         else
           println("DEBUG : Transitionning simple event")
-          ???
+          
+          //the only thing left is to rotate the players turn ig
 
-        
+          renderTheStates(Seq(stateWithActionNaive.rotatePlayerTurn()))
    })
   
     
