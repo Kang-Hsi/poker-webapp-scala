@@ -162,7 +162,86 @@ extension (state: State)
     * @param e
     * @return
     */
-  def applyEventNaive(user:UserId,e: Event):State = ???
+  def applyEventNaive(user:UserId,event: Event):State = 
+    val players = state.gameInfo.players   
+    
+    val userIndex = players.indexWhere(_.getUserId() == user)
+
+    if userIndex < 0 then throw IllegalMoveException("unknown user")
+
+    if !players(userIndex).isOnlyPlaying() then
+      throw IllegalMoveException("You are spectating / Alled in, you cannot do any action")
+
+    //the user is ensured to be playing
+    
+    //the player must then be its turn:
+
+    if userIndex != 0 then throw IllegalMoveException("please wait your turn")
+
+    event match
+      case Event.Fold() => 
+        //in which cases a playyer cannot fold ?
+        //if he is the last player "playing" ?
+        //i guess
+
+        val allPlaying = state.gameInfo.getAllPlayingPlayers
+        if allPlaying.length == 1 then throw IllegalMoveException("You cannot fold if you are the last one playing / all'd in")
+
+        state.applyFold(user)
+      case Event.Check() => 
+        //in which cases a player cannot check ?
+        //1 - if he has not got the correct bet amount
+        // TODO what else?
+        if players(userIndex).getBetAmount() < state.getCallAmount()
+        then throw IllegalMoveException("You cannot check, as you need to bet more money to call")
+        
+        state.applyCheck(user)
+
+      case Event.Bet(amount) =>
+        //in which cases we cannot bet ?
+        // 1 - if the amount we bet is outside how much money we have
+        // TODO what else?
+        
+        if players(userIndex).getMoney() < amount then throw IllegalMoveException("Not enough money")
+
+        if players(userIndex).getBetAmount() + amount < state.getCallAmount()
+        then
+          if players(userIndex).getMoney() == amount then
+            //we are in all in 
+            state.applyAllIn(user)
+          else
+            throw IllegalMoveException("Not enough money to call, and not an all in neither")
+
+        else
+          //we should be good
+          state.applyBet(user,event)
+          
+
+        
+
+
+  /**
+   * Applies the event given. Does not check if the event is valid, the check must be done before
+  **/
+  def applyFold(user:UserId):State=
+    ???
+
+  def applyCheck(user:UserId)=
+    ???
+
+  def applyBet(user:UserId, event:Event)=
+    ???
+
+  def applyAllIn(user:UserId)=
+    ???
+
+  /**
+   * Gets the call amount
+   * could be done using the callAmount in gameInfo, but unsure if we will keep it so..
+  **/
+  def getCallAmount():Money=
+    state.gameInfo.players.map(_.getBetAmount()).max
+
 
   /** Transitions from a phase to another
     *
@@ -324,14 +403,14 @@ extension (state: State)
     ???
   
   /**
-   * gives a new shuffled deck to the state
+   * Resets the communal cards
   **/
-  def populateDeck():State=
-    ???
-
-
   def resetFlop():State=
-    ???
+    state.copy(
+      gameInfo = state.gameInfo.copy(
+        communalCards = Nil
+      )
+    )
 
   /** Adds sentence to the log.
     *
