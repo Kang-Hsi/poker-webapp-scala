@@ -124,23 +124,6 @@ extension (state: State)
 
     state.copy(gameConfig = gameConfigWithBlinds)
 
-  /** Vérifie que l'on puisses aller a la phase d'après (oui si on est au
-    * dernier joueur et tout le monde a le meme bet amount (qui joue)
-    */
-  def canGoNextPhase(): Boolean =
-
-    val gamePhase = state.gamePhase
-    val players = state.gameInfo.players
-    val maxBetAmount = state.highestBetAmount()
-
-    gamePhase match
-      case PreFlop =>
-        players.forall(player => player.hasTalked()) &&
-        players.forall(_._6 == maxBetAmount)
-      case Flop | Turn | River =>
-        players.forall(_._6 == maxBetAmount)
-      case EndRound => true
-      case EndGame  => false
 
   /** Returns state with next phase (if possible)
     *
@@ -148,16 +131,13 @@ extension (state: State)
     *   state with next phase, or just itself.
     */
   def nextPhase(): State =
-    if canGoNextPhase() then
       state.gamePhase match
         case PreFlop  => state.copy(gamePhase = Flop)
         case Flop     => state.copy(gamePhase = Turn)
         case Turn     => state.copy(gamePhase = River)
         case River    => state.copy(gamePhase = EndRound)
         case EndRound => state.copy(gamePhase = PreFlop)
-        case EndGame  => throw Exception("Game has ended !")
-    else if state.gamePhase == EndRound then state.copy(gamePhase = EndGame)
-    else state
+        case EndGame  => throw Exception("Game has ended !, No nextPhase")
 
   /** Returns the highest bet amount.
     *
@@ -229,20 +209,32 @@ extension (state: State)
     state.copy(gameInfo = state.gameInfo.distributePotInternal(playingPlayers))    
 
 
+  /** Hard method:
+   *  Will do several things:
+   *  distribute the pots
+   *  and calculate the nex state with transitionRound
+   *
+  **/
   def goToEndRound(): Seq[State]=
-    ???
+    val playingPlayers = getAllPlayingPlayers(state.gameInfo) //error might be here, since a player
+  //that is not playing, can still have contributed to the pot.
+  //This should maybe be changed to "get players that contributed" 
+  //in case the winner is a subPot. WIll change later if we have the time
+    val endState = state.distributePots(playingPlayers).nextPhase()
+
+    Seq(endState, endState.transitionRound) 
   
   /**
    * Method that handles the transitition to go to flop
   **/
   def goToFlop()=
-    state.addCommunal(3).cleanupNextPhase()
+    state.addCommunal(3).cleanupNextPhase().nextPhase()
 
   def goToTurn()=
-    state.addCommunal(4).cleanupNextPhase()
+    state.addCommunal(4).cleanupNextPhase().nextPhase()
 
   def goToRiver()=
-    state.addCommunal(5).cleanupNextPhase()
+    state.addCommunal(5).cleanupNextPhase().nextPhase()
 
 
   /**
@@ -277,6 +269,11 @@ extension (state: State)
           communalCards = newCommunal
         )
       )
+
+
+  //method that transitions round
+  def transitionRound(): State=
+    ???
   
   /** Adds sentence to the log.
     *
@@ -290,6 +287,7 @@ extension (state: State)
     */
   def setMinRaise: State = ???
 
+
   def hasEveryoneTalked:Boolean= 
     state.gameInfo.players.forall(p =>
         p.hasTalked()
@@ -298,6 +296,7 @@ extension (state: State)
   def hasEveryoneBettedSameAmount:Boolean = 
     val betAmounts = state.gameInfo.players.map(_.getBetAmount())
     betAmounts.forall(a => a == betAmounts.head)
+
 
 extension (gameInfo: GameInfo)
 
