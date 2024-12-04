@@ -9,12 +9,12 @@ import cs214.webapp.*
 extension (state: State)
 
   /**
-    * Returns state with deck shuffled.
+    * Returns state with new deck shuffled.
     *
-    * @return state with deck shuffled.
+    * @return state with new deck shuffled.
     */
-  def shuffleDeck =
-    state.copy(deck = state.deck.shuffle())
+  def populateShuffledDeck =
+    state.copy(deck = CardHelper.allCards.shuffle())
 
   /** Returns a state with cards distributed to each player. Makes sure to only
     * distribute cards to players that are playing.
@@ -22,7 +22,7 @@ extension (state: State)
     * @return
     *   state with cards distributed.
     */
-  def distributeCardsToPlayers(): State =
+  def distributeCards(): State =
     val deckIterator = state.deck.iterator
     val gameInfo = state.gameInfo
     val players = gameInfo.players
@@ -74,7 +74,8 @@ extension (state: State)
     * the players with cards
     *
     * Will reset pot amount ? Will roundNumber-- ? Will set callAmount,
-    * minRaise, maxRaise?
+     minRaise, maxRaise?
+     * USELESS NOW
     */
   def startRound() =
 
@@ -88,7 +89,7 @@ extension (state: State)
         deck = CardHelper.allCards.shuffle()
       )
 
-    stateWithNewShuffledDeck.distributeCardsToPlayers().populateBlinds
+   // stateWithNewShuffledDeck.distributeCardsToPlayers().populateBlinds
 
     
   /** fais tout le nécéssaire pour finir le round (trouves le winner, lui donnes
@@ -183,7 +184,7 @@ extension (state: State)
     val newPot = oldPot + betsOfPlayers
     // resetTheBetAmount of the players
     
-    val playersWithZeroBetAmount = players.map(p => p.withBetAmount(0))
+    val playersWithZeroBetAmount = players.map(p => p.withBetAmount(0).withHasTalked(false))
     
     val preTransitionnedState = state.copy(
       gameInfo = state.gameInfo.copy(
@@ -222,7 +223,7 @@ extension (state: State)
   //in case the winner is a subPot. WIll change later if we have the time
     val endState = state.distributePots(playingPlayers).nextPhase()
 
-    Seq(endState, endState.transitionRound) 
+    Seq(endState, endState.transitionRound()) 
   
   /**
    * Method that handles the transitition to go to flop
@@ -273,8 +274,65 @@ extension (state: State)
 
   //method that transitions round
   def transitionRound(): State=
+    if state.gameInfo.roundNumber >= state.gameConfig.maxRound then
+      //game is ended
+      state.endGame()
+    else
+      state
+        .increaseRoundNb()
+        .setStatus()
+        .rotatePlayerRole()
+        .setBeginOfRoundOrder()
+        .populateShuffledDeck
+        .distributeCards()
+        .resetFlop()
+        .populateBlinds
+        .executeBlinds()
+
+
+  def increaseRoundNb():State=
+    state.copy(
+      gameInfo = state.gameInfo.copy(
+        roundNumber= state.gameInfo.roundNumber + 1
+      )
+    )
+
+  /**
+   * Sets the default status of the players at the beginning of a round (BEFORE that the smallblinds/ bigBlinds are payed)
+   * This method will set the player to spectating if he has no more money. Should only be called before any bidding happens (and before the smallBlind / bigBlind get executed)
+  **/
+  def setStatus()=
+    state.copy(
+      gameInfo = state.gameInfo.copy(
+        players = state.gameInfo.players.map(
+          p => if p.getMoney() <= 0 then
+            p.withMoney(0).withStatus(Status.Spectating)
+          else
+            p
+        )
+      )
+    )
+
+
+  /**
+   * Executes the blinds,
+   * updates the player state accordingly
+   * If not enough money, what should we do? 
+   * Id say just make him loose (spectating + allmoney to pot)
+  **/
+  def executeBlinds()=
     ???
   
+  /**
+   * gives a new shuffled deck to the state
+  **/
+  def populateDeck():State=
+    ???
+
+
+  def resetFlop():State=
+    ???
+
   /** Adds sentence to the log.
     *
     * @return
@@ -296,6 +354,17 @@ extension (state: State)
   def hasEveryoneBettedSameAmount:Boolean = 
     val betAmounts = state.gameInfo.players.map(_.getBetAmount())
     betAmounts.forall(a => a == betAmounts.head)
+
+
+  /**
+   * Sets the phase to endGame
+   * Logs the winner of the game
+   * TODO needs to be done
+  **/
+  def endGame(): State=
+    state.copy(
+      gamePhase = EndGame
+    )
 
 
 extension (gameInfo: GameInfo)
