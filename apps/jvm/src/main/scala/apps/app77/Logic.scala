@@ -40,10 +40,41 @@ class Logic extends StateMachine[Event, State, View]:
    Try({
     
       val stateWithActionNaive = state.applyEventNaive(userId,event)
-      ???
+
+      //TODO need to verify if only one player in the thing or none
+      //So that we skip to the river
+      //here is the first  test for this:
+
+      if stateWithActionNaive.gameInfo.getAllPlayingPlayers.length == 1
+      then
+
+        println("INFO : We are skipping to endRound because only one player is left")
+        renderTheStates(stateWithActionNaive.skipToEndRound())
+
+      else
+
+
+        if stateWithActionNaive.hasEveryoneTalked &&
+          stateWithActionNaive.hasEveryoneBettedSameAmount
+        then 
+          println("DEBUG : Begin transitionning phase")
+          val states = stateWithActionNaive.transitionPhase
+        
+          assert(states.length <= 2, "what the fuck")
+
+          if states.length == 1 then println("INFO : We are transitionning only phase")
+          if states.length == 2 then println("INFO : We are transitionning phase and round")
+
+          renderTheStates(states) 
+        else
+          println("DEBUG : Transitionning simple event")
+          ???
+
+        
    })
   
     
+
 
   override def project(state: State)(userId: UserId): View = 
 
@@ -64,7 +95,17 @@ class Logic extends StateMachine[Event, State, View]:
     )
 
       
-      
+  /**
+   * Transform a sequence of states in a sequence of actions.
+   * If the number of states in a sequence is two, it will add a pause 
+  **/
+  private def renderTheStates(statesToRender : Seq[State]):Seq[Action[State]]=
+    val renderStates = statesToRender.map(s => Action.Render(s))
+    if renderStates.length == 2 then
+      Seq(renderStates(0) ,Action.Pause(100),renderStates(1))
+    else
+      renderStates
+        
 
 
 

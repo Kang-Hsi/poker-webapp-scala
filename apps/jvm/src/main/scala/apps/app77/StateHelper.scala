@@ -187,7 +187,7 @@ extension (state: State)
     *
     * @return
     */
-  def transitionPhase: State = 
+  def transitionPhase: Seq[State] = 
     
     if state.gamePhase == EndRound || 
         state.gamePhase == EndGame then
@@ -202,6 +202,7 @@ extension (state: State)
     // update the pot
     val newPot = oldPot + betsOfPlayers
     // resetTheBetAmount of the players
+    ???
 
   /** Distributes the pots to each player based on the algorithm.
    *  See the documentation of distributePotsInternal for more accurate info
@@ -211,6 +212,10 @@ extension (state: State)
     */
   def distributePots(playingPlayers: List[PlayerInfo]): State = 
     state.copy(gameInfo = state.gameInfo.distributePotInternal(playingPlayers))    
+
+
+  def skipToEndRound(): Seq[State]=
+    ???
     
 
   
@@ -231,6 +236,11 @@ extension (state: State)
   def hasEveryoneBettedSameAmount:Boolean = ???
 
 extension (gameInfo: GameInfo)
+
+  def getAllPlayingPlayers: List[PlayerInfo]=
+    gameInfo.players.filter(
+      p => p.isPlaying()
+      )
 
   /**
     * Returns gameInfo with players turn rotated.
@@ -318,6 +328,7 @@ extension (gameInfo: GameInfo)
    *  2 - gives him/her the money it deserves
    *  3 - toggles it from the pot
    *  4 - if pot not empty, recurses (case of multi pot)
+   * TODO potential problem: if winner is alled in , but noe layer folded, his bet will not be taken into account ; will fix after
   **/
   def distributePotInternal(playingPlayers: List[PlayerInfo]): GameInfo=
     
