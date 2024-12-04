@@ -213,9 +213,9 @@ extension (state: State)
     )
 
     preTransitionnedState.gamePhase match
-      case PreFlop => preTransitionnedState.goToFlop()
-      case Flop => preTransitionnedState.goToTurn()
-      case Turn => preTransitionnedState.goToRiver()
+      case PreFlop => Seq(preTransitionnedState.goToFlop())
+      case Flop => Seq(preTransitionnedState.goToTurn())
+      case Turn => Seq(preTransitionnedState.goToRiver())
       case River => preTransitionnedState.goToEndRound()
       case _ => throw Exception("the transition shouldn't be called in endRound / endGame as they are only 'ephemeral' states")      
 
@@ -236,14 +236,23 @@ extension (state: State)
    * Method that handles the transitition to go to flop
   **/
   def goToFlop()=
-    val communal = state.gameInfo.communalCards
-    
+    state.addCommunal(3).cleanupNextPhase()
 
   def goToTurn()=
-    ???
+    state.addCommunal(4).cleanupNextPhase()
 
   def goToRiver()=
-    ???
+    state.addCommunal(5).cleanupNextPhase()
+
+
+  /**
+   * A method that makes all the cleanup needed for the next phase:
+   * 1 - right minRaise setted
+   * 2 - Sets the right order
+  **/
+  def cleanupNextPhase()=
+    state.setMinRaise.setBeginOfRoundOrder()
+    
 
   /**
    * Method that adds cards to the communal cards
@@ -369,7 +378,7 @@ extension (gameInfo: GameInfo)
           players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
         )
       
-      case EndRound | EndGame => state.gameInfo //should never happen
+      case EndRound | EndGame => throw Exception("no order needed ofr endRound/ endGame")//should never happen
 
 
   /**
