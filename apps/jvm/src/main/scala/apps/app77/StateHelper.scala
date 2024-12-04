@@ -90,22 +90,24 @@ extension (state: State)
 
     stateWithNewShuffledDeck.distributeCardsToPlayers().populateBlinds
 
+    
   /** fais tout le nécéssaire pour finir le round (trouves le winner, lui donnes
     * largent) applée juste avant startRound
     *
     * Will find winner and add to his money the pot amount Will set pot to 0 ?
+    * NEST PLUS UTILE / VALABLE 
     */
   def endRound(): State =
     val State(gamePhase, gameInfo, deck, gameConfig) = state
     require(gamePhase == GamePhase.EndRound)
 
-    val winner = state.findWinner;
+    val winner = CardHelper.findWinner(state.gameInfo.players);
 
     val players = gameInfo.players;
 
     // plus simple de faire une map? obligé bah de parcourir tt les joueurs
     val playersUpdated = players.map(player =>
-      if player.getUserId() == winner then player.updateMoney(gameInfo.pot)
+      if player.getUserId() == winner.getUserId() then player.updateMoney(gameInfo.pot)
       else player
     )
 
@@ -179,21 +181,36 @@ extension (state: State)
     * @param e
     * @return
     */
-  def applyEventNaive(e: Event) = ???
+  def applyEventNaive(user:UserId,e: Event):State = ???
 
   /** Transitions from a phase to another
     *
     * @return
     */
-  def transitionPhase: State = ???
+  def transitionPhase: State = 
+    
+    if state.gamePhase == EndRound || 
+        state.gamePhase == EndGame then
+          throw Exception("The endGame / endRound phase was the 'main' state ; it should not be.")
+      
+
+    val players = state.gameInfo.players
+    
+    val oldPot = state.gameInfo.pot 
+
+    val betsOfPlayers = players.foldLeft(0)((r,p) => r+p.getBetAmount())
+    // update the pot
+    val newPot = oldPot + betsOfPlayers
+    // resetTheBetAmount of the players
 
   /** Distributes the pots to each player based on the algorithm.
+   *  See the documentation of distributePotsInternal for more accurate info
     *
     * @param playingPlayers
     * @return
     */
   def distributePots(playingPlayers: List[PlayerInfo]): State = 
-       
+    state.copy(gameInfo = state.gameInfo.distributePotInternal(playingPlayers))    
     
 
   
@@ -208,6 +225,10 @@ extension (state: State)
     * @return
     */
   def setMinRaise: State = ???
+
+  def hasEveryoneTalked:Boolean= ???
+
+  def hasEveryoneBettedSameAmount:Boolean = ???
 
 extension (gameInfo: GameInfo)
 
