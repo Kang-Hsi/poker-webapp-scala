@@ -67,7 +67,7 @@ extension (state: State)
     *   skips spectacting
     */
   def setBeginOfRoundOrder() =
-    state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal())
+    state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal(state))
 
   /** To be called before the start of a round Will populize the state with a
     * new deck Will rotate the players roles & set the right order Will populate
@@ -90,22 +90,24 @@ extension (state: State)
 
     stateWithNewShuffledDeck.distributeCardsToPlayers().populateBlinds
 
+    
   /** fais tout le nécéssaire pour finir le round (trouves le winner, lui donnes
     * largent) applée juste avant startRound
     *
     * Will find winner and add to his money the pot amount Will set pot to 0 ?
+    * NEST PLUS UTILE / VALABLE 
     */
   def endRound(): State =
     val State(gamePhase, gameInfo, deck, gameConfig) = state
     require(gamePhase == GamePhase.EndRound)
 
-    val winner = state.findWinner;
+    val winner = CardHelper.findWinner(state.gameInfo.players);
 
     val players = gameInfo.players;
 
     // plus simple de faire une map? obligé bah de parcourir tt les joueurs
     val playersUpdated = players.map(player =>
-      if player.getUserId() == winner then player.updateMoney(gameInfo.pot)
+      if player.getUserId() == winner.getUserId() then player.updateMoney(gameInfo.pot)
       else player
     )
 
@@ -179,27 +181,44 @@ extension (state: State)
     * @param e
     * @return
     */
-  def applyEventNaive(e: Event) = ???
+  def applyEventNaive(user:UserId,e: Event):State = ???
 
   /** Transitions from a phase to another
     *
     * @return
     */
-  def transitionPhase: State = ???
+  def transitionPhase: Seq[State] = 
+    
+    if state.gamePhase == EndRound || 
+        state.gamePhase == EndGame then
+          throw Exception("The endGame / endRound phase was the 'main' state ; it should not be.")
+      
+
+    val players = state.gameInfo.players
+    
+    val oldPot = state.gameInfo.pot 
+
+    val betsOfPlayers = players.foldLeft(0)((r,p) => r+p.getBetAmount())
+    // update the pot
+    val newPot = oldPot + betsOfPlayers
+    // resetTheBetAmount of the players
+    ???
 
   /** Distributes the pots to each player based on the algorithm.
+   *  See the documentation of distributePotsInternal for more accurate info
     *
     * @param playingPlayers
     * @return
     */
-  def distributePots(playingPlayers: List[PlayerInfo]): State = ???
+  def distributePots(playingPlayers: List[PlayerInfo]): State = 
+    state.copy(gameInfo = state.gameInfo.distributePotInternal(playingPlayers))    
 
-  /** Find the winner of a given state.
-    *
-    * @return
-    */
-  def findWinner: UserId = ???
 
+  def skipToEndRound(): Seq[State]=
+    ???
+    
+
+  
   /** Adds sentence to the log.
     *
     * @return
@@ -212,7 +231,16 @@ extension (state: State)
     */
   def setMinRaise: State = ???
 
+  def hasEveryoneTalked:Boolean= ???
+
+  def hasEveryoneBettedSameAmount:Boolean = ???
+
 extension (gameInfo: GameInfo)
+
+  def getAllPlayingPlayers: List[PlayerInfo]=
+    gameInfo.players.filter(
+      p => p.isPlaying()
+      )
 
   /**
     * Returns gameInfo with players turn rotated.
@@ -265,15 +293,118 @@ extension (gameInfo: GameInfo)
     gameInfo.copy(players = newPlayers)
 
   /**
-    * Returns game info with the order of the round.
-    * Small blind start
+    * Returns game info with players order of the round.
+    * For preflop player after big blind starts.
+    * For flop, turn, river blind starts.
     *
-    * @return
+    * @return gameInfo with players order of the round.
     */
-  def setBeginOfRoundOrderInternal() =
-    val player = gameInfo.players
-    val smallBlindIndex = player.indexWhere(player => player.isSmallBlind())
-    assert(smallBlindIndex >= 0, "No Small Blind Player ??")
-    gameInfo.copy(players =
-      player.drop(smallBlindIndex) ++ player.take(smallBlindIndex)
-    )
+  def setBeginOfRoundOrderInternal(state: State): GameInfo =
+    val players = gameInfo.players
+
+    val smallBlindPosition = players.indexWhere(player => player.isSmallBlind())
+    val bigBlindPosition = players.indexWhere(player => player.isBigBlind())
+
+    assert(smallBlindPosition >= 0, "No Small Blind?!")
+    assert(bigBlindPosition >= 0, "No Big Blind?!")
+
+    state.gamePhase match
+      case PreFlop =>
+        gameInfo.copy(players = 
+          players.drop(bigBlindPosition + 1) ++ players.take(bigBlindPosition + 1))
+
+      case Flop | Turn | River =>
+        
+        gameInfo.copy(players =
+          players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
+        )
+      
+      case EndRound | EndGame => state.gameInfo //should never happen
+
+
+  /**
+   * This methods does : 
+   *  1 - finds winner
+   *  2 - gives him/her the money it deserves
+   *  3 - toggles it from the pot
+   *  4 - if pot not empty, recurses (case of multi pot)
+   * TODO potential problem: if winner is alled in , but noe layer folded, his bet will not be taken into account ; will fix after
+  **/
+  def distributePotInternal(playingPlayers: List[PlayerInfo]): GameInfo=
+    
+    assert(playingPlayers.forall(_.isPlaying()), "the players passed to distributePot must only be playing")
+
+    val allPlayers = gameInfo.players
+
+    val winner = CardHelper.findWinner(playingPlayers)
+
+    val winnerIndex = allPlayers.indexWhere(_ == winner)
+
+    assert(winnerIndex >= 0, "No winner ??")
+
+    val pot = gameInfo.pot
+
+    winner.getStatus() match
+      case Status.Spectating => throw Exception("The winning player is not playing")
+
+      case Status.Playing => 
+        val winnerWithMoney = winner.updateMoney(pot)
+        gameInfo.copy(
+          players = allPlayers.updated(winnerIndex, winnerWithMoney),
+          pot = 0
+        )
+     
+      case Status.AllIn =>
+        //mediocre code, I am sorry 
+        // test case : a = 20 b = 10 c =30 d = 40 e = 40
+        // winners : a > c > e
+        // 
+        // a wins over b;c;d;e
+        //            10; 20 ; 20 ;20
+        //new state of pot contributions :
+        //            0; 10; 20; 20
+        //c wins over d;e
+        //            10, 10
+        //new state : 10, 10
+        //e wins over d
+        //            10
+        val (updatedPlayers,amountHeWins) = 
+          playingPlayers.foldLeft((Nil, 0))(
+            (rest,p) => if p == winner then rest
+                        else 
+                          if p.getPotContribution() >= winner.getPotContribution() then
+                            (p.updatePotContribution(-winner.getPotContribution()) :: rest._1,
+                              rest._2 + winner.getPotContribution())
+                          else
+                            (p.withPotContribution(0) :: rest._1, rest._2 + p.getPotContribution()) 
+              )
+
+                      
+        val newPot = pot - amountHeWins
+
+        assert(newPot >= 0, "Pot <= 0 ??")
+
+        val winnerWithPot = winner.updateMoney(amountHeWins)
+
+        val newGameInfo = 
+          gameInfo.copy(
+            players = allPlayers.updated(
+              winnerIndex, winnerWithPot
+            ),
+          pot = newPot
+          )
+        
+        if newPot == 0 then newGameInfo
+        else
+          val playingPlayersWithoutLastWinner = 
+            playingPlayers.filter( p => p != winner)
+
+          assert(playingPlayersWithoutLastWinner.length == playingPlayers.length - 1, "Problem with how the last winner is toggled from the list")
+
+          newGameInfo.distributePotInternal(
+            playingPlayersWithoutLastWinner
+            )
+
+
+
+
