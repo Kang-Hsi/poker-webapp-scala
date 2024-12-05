@@ -1,6 +1,7 @@
 package apps.app77
 
 import cs214.webapp.*
+import scala.util.boundary
 
 
 
@@ -148,9 +149,6 @@ def compareHighCard(cardNumbers: List[Int], thatcardNumbers: List[Int]): Int =
     case(Nil, Nil) => 0
     case _ => throw Exception("Not possible, inputs should of same size.")
 
-def findStraight(numbers: List[Int]): Option[Int] = 
-    val straights = numbers.distinct.sorted.reverse.sliding(5) 
-    straights.collectFirst{case possibleStraight if (possibleStraight(0) - possibleStraight(4) == 4) => possibleStraight(0)}
 
 
 object HandRank: 
@@ -163,7 +161,6 @@ object HandRank:
   def evaluateHand(cards: List[Card]): HandRank = 
     val suits = cards.map((suit, _, _) => suit)
     val numbers = cards.map((_, number, _) => number)
-
     
     val suitCount: Map[Suit, Int] = suits.groupBy(identity).view.mapValues(_.size).toMap
     val numbersCount: Map[Int, Int] = numbers.groupBy(identity).view.mapValues(_.size).toMap
@@ -178,48 +175,61 @@ object HandRank:
     //check from best to worst hand
 
     //Royal or Straight Flush
-    flushSuitOption.foreach(flushSuit =>
-      val flushCards = cards.filter((suit, _, _) => suit == flushSuit)
+    flushSuitOption match 
+      case Some(flushSuit) =>
+        val flushCards = cards.filter((suit, _, _) => suit == flushSuit)
+        val flushNumbers = flushCards.map((_, number, _) => number).sorted.reverse
+        val flushWithMaybeAce = if flushNumbers.contains(14) then flushNumbers :+ 1 else flushNumbers
 
-      val flushNumbers = flushCards.map((_, number, _) => number).sorted.reverse
-      val flushWithMaybeAce = if flushNumbers.contains(14) then flushNumbers :+ 1 else flushNumbers //ace can be 1 or 14 
+        findStraight(flushWithMaybeAce) match {
+          case Some(highNumber) =>
+            if highNumber == 14 then
+              return RoyalFlush()
+            else
+              return StraightFlush(highNumber)
+          case _ => 
+        }
 
-      findStraight(flushWithMaybeAce).foreach(highNumber =>
-        if highNumber == 14 then RoyalFlush() else
-          StraightFlush(highNumber))
-    )
-
+      case _ => 
+    
     //Four of a kind
-    numbersCount.find((_, count) => count == 4).foreach((quadNumber, _) => 
-      val kicker = sortedNumbers.filter(_ != quadNumber).max  
-      FourOfAKind(quadNumber, kicker)
-    )
+    numbersCount.find((_, count) => count == 4) match
+      case Some((quadNumber, _)) =>
+        val kicker = sortedNumbers.filter(_ != quadNumber).max
+        return FourOfAKind(quadNumber, kicker)
+    
+      case _ =>
 
     //Full house
     if (tripletNumbers.nonEmpty && (pairNumbers.nonEmpty || tripletNumbers.size > 1)) then //case there are two tripletNumbers
       val tripletNumber = tripletNumbers.max
       val pairNumber = if tripletNumbers.size > 1 then tripletNumbers.min else pairNumbers.max
-      FullHouse(tripletNumber, pairNumber)
+      return FullHouse(tripletNumber, pairNumber)
 
     //Flush
-    flushSuitOption.foreach(flushSuit =>
-      val flushCards = cards.filter((suit, _, _) => suit == flushSuit)
-      val flushNumbers = flushCards.map((_, number, _) => number).sorted.reverse
+    flushSuitOption match
+      case Some(flushSuit) =>
+        val flushCards = cards.filter((suit, _, _) => suit == flushSuit)
+        val flushNumbers = flushCards.map((_, number, _) => number).sorted.reverse
 
-      Flush(flushNumbers.take(5))
-    )
-
+        return Flush(flushNumbers.take(5))
+        
+      case _ =>
+    
+    
     //Straight
     val sortedNumbersWithMaybeAce = if sortedNumbers.contains(14) then sortedNumbers :+ 1 else sortedNumbers
-    findStraight(sortedNumbersWithMaybeAce).foreach(highNumber =>
-      Straight(highNumber)
-    )
+    findStraight(sortedNumbersWithMaybeAce) match
+      case Some(highNumber) =>
+        return Straight(highNumber)
+      
+      case _ => 
 
     //Three of a kind
     if tripletNumbers.size == 1 then
       val tripletNumber = tripletNumbers(0)
       val kickers = sortedNumbers.filter(_ != tripletNumber).take(2)
-      ThreeOfAKind(tripletNumber, kickers)
+      return ThreeOfAKind(tripletNumber, kickers)
     
 
     //Two pairs
@@ -227,16 +237,20 @@ object HandRank:
       val highPairNumber = pairNumbers(0)
       val lowPairNumber = pairNumbers(1)
       val kicker = sortedNumbers.filter(number => number != highPairNumber && number != lowPairNumber).max
-      TwoPair(highPairNumber, lowPairNumber, kicker)
+      return TwoPair(highPairNumber, lowPairNumber, kicker)
 
     //One pair
     if pairNumbers.size == 1 then 
       val pairNumber = pairNumbers(0)
       val kickers = sortedNumbers.filter(number => number != pairNumber).take(3)
-      OnePair(pairNumber, kickers)
+      return OnePair(pairNumber, kickers)
 
 
     //High card
     val highCards = sortedNumbers.take(5)
-    HighCard(highCards)
-    
+    return HighCard(highCards)
+
+def findStraight(numbers: List[Int]): Option[Int] = 
+    val straights = numbers.distinct.sorted.reverse.sliding(5) 
+
+    straights.collectFirst{case possibleStraight if (possibleStraight(0) - possibleStraight(4) == 4) => possibleStraight(0)}

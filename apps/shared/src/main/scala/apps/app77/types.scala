@@ -95,9 +95,9 @@ case class GameInfo(
   communalCards : List[Card],
   pot: Pot,
   logs: List[String],//Logs with last entry being the most recent action
-  callAmount: Money,
-  minRaise: Money,
-  maxRaise: Money,
+  callAmount: Money, //Useless
+  minRaise: Money, 
+  maxRaise: Money, //Useless but maybe useful on type Player?
 )
 
 

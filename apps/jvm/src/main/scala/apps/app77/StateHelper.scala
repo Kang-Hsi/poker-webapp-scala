@@ -30,7 +30,7 @@ extension (state: State)
     val playersWithCards =
       (for {
         pl <- players
-        if (pl.getStatus() == Status.Playing)
+        if (pl.isPlaying())
       } yield pl.withOptionHand(
         Some(
           Set(deckIterator.next(), deckIterator.next())
@@ -53,10 +53,10 @@ extension (state: State)
     state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
 
   /** Rotates the role of the players; This function is implemented in a "hard
-    * way", Since we have to assume it could be called anytime
+    * way", Since we have to assume it could be called anytime.
     *
-    * So this functions rotates the players roles BUT Does not rotate to the
-    * next player Sets the amount of BigBlind & SmallBlind to 0
+    * So this functions rotates the players roles BUT does not rotate to the
+    * next player. Sets the amount of BigBlind & SmallBlind to 0.
     */
   def rotatePlayerRole() =
     state.copy(gameInfo = state.gameInfo.rotatePlayerRolesInternal())
@@ -69,13 +69,11 @@ extension (state: State)
   def setBeginOfRoundOrder() =
     state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal(state))
 
-  /** To be called before the start of a round Will populize the state with a
-    * new deck Will rotate the players roles & set the right order Will populate
-    * the players with cards
+  /** To be called before the start of a round. Will populate the state with a
+    * new deck. Will rotate the players roles & set the right order. Will populate
+    * the players with cards.
     *
-    * Will reset pot amount ? Will roundNumber-- ? Will set callAmount,
-     minRaise, maxRaise?
-     * USELESS NOW
+    * USELESS NOW
     */
   def startRound() =
 
@@ -265,17 +263,46 @@ extension (state: State)
   /**
    * Sets all the players to no talk
   **/
-  def withNoPlayersTalked():State=
-    ???
+  def withNoPlayersTalked(): State =
 
-  def withPlayerUpdateStatus(userIndex: Int, newStatus: Status):State=
-    ???
+    val players = state.gameInfo.players
+    val playersNoTalked = players.map(_.withHasTalked(false))
+    val gameInfoUpdated = state.gameInfo.copy(players = playersNoTalked)
+
+    state.copy(gameInfo = gameInfoUpdated)
+
+
+  def withPlayerUpdateStatus(userIndex: Int, newStatus: Status): State=
+    val players = state.gameInfo.players
+    val playersWithIndex = players.zipWithIndex
+
+    val playersUpdated = playersWithIndex.map((player, index) => if index == userIndex then player.withStatus(newStatus) else player)
+
+    val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
+
+    state.copy(gameInfo = gameInfoUpdated)
+
 
   def withPlayerUpdateBet(userIndex:Int, amount:Money):State=
-    ???    
+    val players = state.gameInfo.players
+    val playersWithIndex = players.zipWithIndex
+
+    val playersUpdated = playersWithIndex.map((player, index) => if index == userIndex then player.withBetAmount(amount) else player)
+
+    val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
+
+    state.copy(gameInfo = gameInfoUpdated)
 
   def withPlayerUpdateMoney(userIndex: Int, moneyToAddOrSub: Money):State=
-  ???
+    val players = state.gameInfo.players
+    val playersWithIndex = players.zipWithIndex
+
+    val playersUpdated = playersWithIndex.map((player, index) => if index == userIndex then player.withMoney(moneyToAddOrSub) else player)
+
+    val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
+
+    state.copy(gameInfo = gameInfoUpdated)
+
 
   def withPlayerHasTalked(userIndex:Int, hasTalked : Boolean):State=
     def gameInfo = state.gameInfo
@@ -376,7 +403,7 @@ extension (state: State)
    * 2 - Sets the right order
   **/
   def cleanupNextPhase()=
-    state.setMinRaise.setBeginOfRoundOrder()
+    state.setMinRaise().setBeginOfRoundOrder()
     
 
   /**
@@ -469,14 +496,26 @@ extension (state: State)
     *
     * @return
     */
-  def addLog(str: String): List[String] = ???
+  def addLog(str: String): State = 
+    val stateLog = state.gameInfo.logs
+    val updatedLog = stateLog :+ str 
+
+    val gameInfoUpdated = state.gameInfo.copy(logs = updatedLog)
+
+    state.copy(gameInfo = gameInfoUpdated)
+
+    
 
   /** Set the minimum raise at the beginning of the round. Always small blind.
-    *
+    * @TODO should we get smallBlind from gameConfig??? 
     * @return
     */
-  def setMinRaise: State = ???
+  def setMinRaise(): State =
+    val smallBlind = conf.getSmallBlind
 
+    val gameInfoUpdated = state.gameInfo.copy(minRaise = smallBlind) 
+
+    state.copy(gameInfo = gameInfoUpdated)
 
   def hasEveryoneTalked:Boolean= 
     state.gameInfo.players.forall(p =>
@@ -583,7 +622,7 @@ extension (gameInfo: GameInfo)
           players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
         )
       
-      case EndRound | EndGame => throw Exception("no order needed ofr endRound/ endGame")//should never happen
+      case EndRound | EndGame => throw Exception("no order needed for endRound/endGame")//should never happen
 
 
   /**
