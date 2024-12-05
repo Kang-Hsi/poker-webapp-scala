@@ -14,11 +14,3 @@ class CardHelperTests extends FunSuite :
         val expectedValue = 2
         val expectedSuite =  Suit.Diamond
         assert(CardHelper.allCards(14) == (expectedSuite, expectedValue, expectedEmoji), "There is a problem in the deck")
-
-
-
-
-
-
-
-
