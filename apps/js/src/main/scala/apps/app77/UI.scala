@@ -7,7 +7,8 @@ import scalatags.JsDom.all.*
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 import cs214.webapp.EventResponse.Wire
-
+import org.scalajs.dom
+import org.scalajs.dom.{document, HTMLInputElement}
 @JSExportTopLevel("app77")
 object TextUI extends WSClientApp:
   def appId: String = "app77"
@@ -41,14 +42,13 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     // Les descriptions des lignes
     val headers = List("Role", "Name")
     // Tableau des joueurs et leurs rôles
-    val rolesTable = table(
-      cls := "table",
-    // Ligne d'entête avec le nom de chaque joueur
-      tr(
-      ),
-        // Lignes des données
-        for ((header, rowData) <- headers.zipWithIndex) yield tr(
-          td(b(header)), // Colonne de description ("Role", "Name")
+    val rolesTableContainer = div(
+      cls := "roles-table-container",
+      table(
+        cls := "roles-table",
+        for ((header, rowData) <- headers.zipWithIndex) 
+        yield tr(
+          td(b(header)),
           for ((name, roleOpt) <- players) yield td(
             if (rowData == 0) {
               roleOpt match
@@ -56,28 +56,51 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
                 case Role.SmallBlind => s"smallBlind(${view.gameConfig.smallBlind})"
                 case Role.BigBlind => s"BigBlind(${view.gameConfig.bigBlind})"
                 case Role.Normal => s""
-          } // Ligne pour les rôles
-            else name // Ligne pour les noms
+            } else name
             )
+          )
         )
-      )
+    )
 
     // Actions disponibles pour le joueur
     val actions = div(
       cls := "actions",
       button(cls := "action-button", onclick := { () => sendEvent(Event.Fold()) }, "Fold"),
       button(cls := "action-button", onclick := { () => sendEvent(Event.Check()) }, "Call"),
-      button(cls := "action-button", onclick := { () => sendEvent(Event.Bet(50)) }, "Raise")
+      div(
+        cls := "raise-container",
+        input(
+          `type` := "number",
+          id := "raise-input",
+          placeholder := "Enter amount",
+          min := "10",
+          cls := "raise-input"
+        ),
+        button(
+          cls := "action-button",
+          onclick := { () =>
+            val inputElement = dom.document
+              .getElementById("raise-input")
+              .asInstanceOf[HTMLInputElement]
+            val raiseAmount = inputElement.value.toIntOption.getOrElse(10)
+            // Vérifie si la valeur est inférieure au min et corrige si nécessaire
+            val correctedAmount = math.max(raiseAmount, 10)
+            sendEvent(Event.Bet(raiseAmount))
+          },
+          "Raise"
+        )
+      )
     )
 
     // Combine tout dans une vue
     div(
       cls := "poker-ui",
       header,
-      rolesTable,
+      rolesTableContainer,
       actions
     )
   }
+  
 
   // Définir le CSS pour styliser l'interface
   override def css: String = super.css + """
@@ -87,11 +110,10 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   padding: 20px;
     |   border: 1px solid #ccc;
     |   border-radius: 5px;
-    |   background-color: #f9f9f9;
-    |   max-width: 80%; /* Limite la largeur maximale */
-    |   text-align: center; /* Centre le contenu */
+    |   max-width: 90%;
+    |   text-align: center;
+    |   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ajoute une ombre pour mieux délimiter */
     | }
-    |
     | .header {
     |   text-align: center;
     |   font-size: 2em;
@@ -101,25 +123,34 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |
     | .roles-table {
     |   margin: 20px auto;
-    |   border-collapse: collapse;
-    |   width: 100%; /* Adapte la largeur du tableau au conteneur */
-    |   table-layout: fixed; /* Force une largeur fixe pour les colonnes */
+    |   width: auto; /* Laisse la largeur s'ajuster automatiquement */
+    |   border-collapse: collapse; /* Enlève les espaces entre les bordures */
+    | }
+    |
+    | .roles-table td, .roles-table th {
+    |   padding: 10px;
+    |   text-align: center;
+    |   border-right: 1px solid #ccc;
+    |   overflow: visible;
+    |   text-overflow: clip;
+    |   white-space: normal; /* Permet le retour à la ligne si nécessaire */
+    | }
+    |
+    | .roles-table td:last-child, .roles-table th:last-child {
+    |   border-right: none;
+    | }
+    |
+    | .roles-table tr {
+    |   border-bottom: 1px solid #ccc;
+    | }
+    |
+    | .roles-table th, .roles-table td {
+    |   max-width: none; /* Supprime les limites de largeur */
+    | }
+    |
+    | .roles-table-container {
     |   overflow-x: auto; /* Permet le défilement horizontal si nécessaire */
-    |   display: block; /* Active le défilement si le tableau est trop large */
     | }
-    |
-    | .table th, .table td {
-    |   border: 1px solid #ddd;
-    |   padding: 8px;
-    |   text-align: center; /* Centre les textes dans les colonnes */
-    |   font-size: 1.2em; /* Augmente la taille du texte */
-    | }
-    |
-    | .table th {
-    |   background-color: #f2f2f2;
-    |   font-weight: bold;
-    | }
-    |
     | .actions {
     |   display: flex;
     |   justify-content: center;
