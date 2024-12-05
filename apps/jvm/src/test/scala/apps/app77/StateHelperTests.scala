@@ -48,14 +48,14 @@ class StateHelperTests extends FunSuite :
     test("distributeCardsToPlayers should remove cards from the deck (we don't waist any card)") :
         val numberOfPlayers = 4
         val initialState = createInitialState(createUserIds(numPlayers = 4))
-        val updatedState = initialState.distributeCardsToPlayers()
+        val updatedState = initialState.distributeCards()
         val numberOfCardsDistributed = 2 * numberOfPlayers
         assert(updatedState.deck.size == initialState.deck.size - numberOfCardsDistributed)
 
     test("distributeCardsToPlayers: each player should have two cards in their hand") :
         val numberOfPlayers = 4
         val initialState = createInitialState(createUserIds(numPlayers = 4))
-        val updatedState = initialState.distributeCardsToPlayers()
+        val updatedState = initialState.distributeCards()
         assert(
             updatedState.gameInfo.players.forall(playerInfo => playerInfo._5.isDefined && playerInfo._5.get.size == 2)
         )

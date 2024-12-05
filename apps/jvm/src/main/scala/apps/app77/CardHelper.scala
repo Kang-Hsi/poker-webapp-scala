@@ -28,7 +28,7 @@ object CardHelper:
     val repr = allRepresentations.iterator
     (for
       suit <- Suit.values
-      nb <- 1 to 13
+      nb <- 2 to 14
     yield
       (suit, nb, repr.next())
     ).toList

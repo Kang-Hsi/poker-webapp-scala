@@ -30,7 +30,7 @@ extension (state: State)
     val playersWithCards =
       (for {
         pl <- players
-        if (pl.getStatus() == Status.Playing)
+        if (pl.isPlaying())
       } yield pl.withOptionHand(
         Some(
           Set(deckIterator.next(), deckIterator.next())
@@ -53,10 +53,10 @@ extension (state: State)
     state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
 
   /** Rotates the role of the players; This function is implemented in a "hard
-    * way", Since we have to assume it could be called anytime
+    * way", Since we have to assume it could be called anytime.
     *
-    * So this functions rotates the players roles BUT Does not rotate to the
-    * next player Sets the amount of BigBlind & SmallBlind to 0
+    * So this functions rotates the players roles BUT does not rotate to the
+    * next player. Sets the amount of BigBlind & SmallBlind to 0.
     */
   def rotatePlayerRole() =
     state.copy(gameInfo = state.gameInfo.rotatePlayerRolesInternal())
@@ -69,13 +69,11 @@ extension (state: State)
   def setBeginOfRoundOrder() =
     state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal(state))
 
-  /** To be called before the start of a round Will populize the state with a
-    * new deck Will rotate the players roles & set the right order Will populate
-    * the players with cards
+  /** To be called before the start of a round. Will populate the state with a
+    * new deck. Will rotate the players roles & set the right order. Will populate
+    * the players with cards.
     *
-    * Will reset pot amount ? Will roundNumber-- ? Will set callAmount,
-     minRaise, maxRaise?
-     * USELESS NOW
+    * USELESS NOW
     */
   def startRound() =
 
@@ -583,7 +581,7 @@ extension (gameInfo: GameInfo)
           players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
         )
       
-      case EndRound | EndGame => throw Exception("no order needed ofr endRound/ endGame")//should never happen
+      case EndRound | EndGame => throw Exception("no order needed for endRound/endGame")//should never happen
 
 
   /**
