@@ -90,7 +90,7 @@ extension (state: State)
 
     stateWithNewShuffledDeck.distributeCardsToPlayers().populateBlinds
 
-    
+   
   /** fais tout le nécéssaire pour finir le round (trouves le winner, lui donnes
     * largent) applée juste avant startRound
     *
@@ -101,20 +101,20 @@ extension (state: State)
     val State(gamePhase, gameInfo, deck, gameConfig) = state
     require(gamePhase == GamePhase.EndRound)
 
-    val winner = CardHelper.findWinner(state.gameInfo.players);
+    val winner = CardHelper.findWinner(state.gameInfo.players, state.gameInfo.communalCards);
 
     val players = gameInfo.players;
 
     // plus simple de faire une map? obligé bah de parcourir tt les joueurs
     val playersUpdated = players.map(player =>
-      if player.getUserId() == winner.getUserId() then player.updateMoney(gameInfo.pot)
+      if player.getUserId() == winner.head.getUserId() then player.updateMoney(gameInfo.pot)
       else player
     )
 
     // val updatedGameInfo = gameInfo.copy(pot = 0)
     val gameInfoUpdated = gameInfo.copy(players = playersUpdated)
     val newState = state.copy(gameInfo = gameInfoUpdated)
-    newState.nextPhase()
+    newState.nextPhase() 
 
   /** Populate the blind amount in functio of config
     */
@@ -202,7 +202,7 @@ extension (state: State)
     // update the pot
     val newPot = oldPot + betsOfPlayers
     // resetTheBetAmount of the players
-
+      ???
   /** Distributes the pots to each player based on the algorithm.
    *  See the documentation of distributePotsInternal for more accurate info
     *
@@ -324,8 +324,9 @@ extension (gameInfo: GameInfo)
     assert(playingPlayers.forall(_.isPlaying()), "the players passed to distributePot must only be playing")
 
     val allPlayers = gameInfo.players
+    val communalCards = gameInfo.communalCards
 
-    val winner = CardHelper.findWinner(playingPlayers)
+    val winner = CardHelper.findWinner(playingPlayers, communalCards).head
 
     val winnerIndex = allPlayers.indexWhere(_ == winner)
 
