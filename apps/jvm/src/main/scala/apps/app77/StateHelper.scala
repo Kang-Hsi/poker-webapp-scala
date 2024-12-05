@@ -263,17 +263,46 @@ extension (state: State)
   /**
    * Sets all the players to no talk
   **/
-  def withNoPlayersTalked():State=
-    ???
+  def withNoPlayersTalked(): State =
 
-  def withPlayerUpdateStatus(userIndex: Int, newStatus: Status):State=
-    ???
+    val players = state.gameInfo.players
+    val playersNoTalked = players.map(_.withHasTalked(false))
+    val gameInfoUpdated = state.gameInfo.copy(players = playersNoTalked)
+
+    state.copy(gameInfo = gameInfoUpdated)
+
+
+  def withPlayerUpdateStatus(userIndex: Int, newStatus: Status): State=
+    val players = state.gameInfo.players
+    val playersWithIndex = players.zipWithIndex
+
+    val playersUpdated = playersWithIndex.map((player, index) => if index == userIndex then player.withStatus(newStatus) else player)
+
+    val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
+
+    state.copy(gameInfo = gameInfoUpdated)
+
 
   def withPlayerUpdateBet(userIndex:Int, amount:Money):State=
-    ???    
+    val players = state.gameInfo.players
+    val playersWithIndex = players.zipWithIndex
+
+    val playersUpdated = playersWithIndex.map((player, index) => if index == userIndex then player.withBetAmount(amount) else player)
+
+    val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
+
+    state.copy(gameInfo = gameInfoUpdated)
 
   def withPlayerUpdateMoney(userIndex: Int, moneyToAddOrSub: Money):State=
-  ???
+    val players = state.gameInfo.players
+    val playersWithIndex = players.zipWithIndex
+
+    val playersUpdated = playersWithIndex.map((player, index) => if index == userIndex then player.withMoney(moneyToAddOrSub) else player)
+
+    val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
+
+    state.copy(gameInfo = gameInfoUpdated)
+
 
   def withPlayerHasTalked(userIndex:Int, hasTalked : Boolean):State=
     def gameInfo = state.gameInfo
@@ -374,7 +403,7 @@ extension (state: State)
    * 2 - Sets the right order
   **/
   def cleanupNextPhase()=
-    state.setMinRaise.setBeginOfRoundOrder()
+    state.setMinRaise().setBeginOfRoundOrder()
     
 
   /**
@@ -467,14 +496,26 @@ extension (state: State)
     *
     * @return
     */
-  def addLog(str: String): List[String] = ???
+  def addLog(str: String): State = 
+    val stateLog = state.gameInfo.logs
+    val updatedLog = stateLog :+ str 
+
+    val gameInfoUpdated = state.gameInfo.copy(logs = updatedLog)
+
+    state.copy(gameInfo = gameInfoUpdated)
+
+    
 
   /** Set the minimum raise at the beginning of the round. Always small blind.
-    *
+    * @TODO should we get smallBlind from gameConfig??? 
     * @return
     */
-  def setMinRaise: State = ???
+  def setMinRaise(): State =
+    val smallBlind = conf.getSmallBlind
 
+    val gameInfoUpdated = state.gameInfo.copy(minRaise = smallBlind) 
+
+    state.copy(gameInfo = gameInfoUpdated)
 
   def hasEveryoneTalked:Boolean= 
     state.gameInfo.players.forall(p =>
