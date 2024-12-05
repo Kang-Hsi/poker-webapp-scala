@@ -12,7 +12,7 @@ import org.scalajs.dom.{document, HTMLInputElement}
 @JSExportTopLevel("app77")
 object TextUI extends WSClientApp:
   def appId: String = "app77"
-  def uiId: String =  "text"
+  def uiId: String =  "html"
 
   def init(userId: UserId, sendMessage: ujson.Value => Unit, target: Target): ClientAppInstance =
     val _ = println("textUIInstance instancieted ...")
@@ -26,13 +26,6 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
 
   // Rend la vue sous forme de HTML avec ScalaTags
   override def render(userId: UserId, view: View): Frag = {
-    val players = List(
-      ("Alice", Role.Dealer),
-      ("Bob", Role.SmallBlind),
-      ("Charlie", Role.BigBlind),
-      ("Diana", Role.Normal)
-    )
-
     // Header de la page
     val header = div(
       cls := "header",
@@ -49,14 +42,15 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
         for ((header, rowData) <- headers.zipWithIndex) 
         yield tr(
           td(b(header)),
-          for ((name, roleOpt) <- players) yield td(
+          for ((userId,money,role,status,_,betAmount,hasTalked,potContribution) <- view.gameInfo.players) yield td(
             if (rowData == 0) {
-              roleOpt match
+              role match
                 case Role.Dealer => s"Dealer"
                 case Role.SmallBlind => s"smallBlind(${view.gameConfig.smallBlind})"
                 case Role.BigBlind => s"BigBlind(${view.gameConfig.bigBlind})"
                 case Role.Normal => s""
-            } else name
+            } else
+              s"${userId}" + s"${money}" + "$"
             )
           )
         )
@@ -93,26 +87,29 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     )
 
     // Combine tout dans une vue
-    div(
-      cls := "poker-ui",
-      header,
-      rolesTableContainer,
-      actions
+    frag(
+      p(
+        cls := "poker-ui",
+        header,
+        rolesTableContainer,
+        actions
+      )
     )
   }
   
 
   // Définir le CSS pour styliser l'interface
   override def css: String = super.css + """
-    | .poker-ui {
+    | .app77 {
     |   font-family: Arial, sans-serif;
     |   margin: auto;
     |   padding: 20px;
     |   border: 1px solid #ccc;
     |   border-radius: 5px;
-    |   max-width: 90%;
+    |   max-width: 200%;
     |   text-align: center;
-    |   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ajoute une ombre pour mieux délimiter */
+    |   justify-content: center;
+    |   
     | }
     | .header {
     |   text-align: center;
