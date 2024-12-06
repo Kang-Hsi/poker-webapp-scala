@@ -3,12 +3,15 @@ package apps.app77
 import cs214.webapp.*
 import cs214.webapp.client.*
 import cs214.webapp.client.graphics.*
-import scalatags.JsDom.all.*
+import scalatags.JsDom.all._
+
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 import cs214.webapp.EventResponse.Wire
 import org.scalajs.dom
 import org.scalajs.dom.{document, HTMLInputElement}
+
+
 @JSExportTopLevel("app77")
 object TextUI extends WSClientApp:
   def appId: String = "app77"
@@ -46,7 +49,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
       cls := "roles-table-container",
       table(
         cls := "roles-table",
-        for ((header, rowData) <- headers.zipWithIndex) 
+        for ((header, rowData) <- headers.zipWithIndex)
         yield tr(
           td(b(header)),
           for ((name, roleOpt) <- players) yield td(
@@ -91,16 +94,73 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
         )
       )
     )
+    //Comunal Card + Pot (5 cartes, parfois  certaines de dos, représenté par ?), + une colonne avec le pot
+    // Récupérer les cartes communes et ajouter des cartes vides si nécessaire
+    val commCards = view._1.communalCards
+    val emptyCards = List.fill(5 - commCards.size)(" ? ")
+    val cards = commCards.map(_._3) ++ emptyCards
 
+    val commCardPot = div(
+      cls := "communal-card-pot",
+        table(
+          cls := "communalTable",
+          tr(
+            th(cls := "tableHeader", "Communal Cards"),
+            th(cls := "tableHeader", "Pot")
+          ),
+          tr(
+            td(
+              table(
+                cls := "communalTable",
+                tr(
+                  for(card <- cards) yield td(cls := "tableData", card)
+                )
+              )
+            ),
+            td(cls := "tableData", s"${view.gameInfo.pot} $$")
+          )
+        )
+      )
+
+    val myCards = view.gameInfo.players.filter(p => p._5.isDefined).flatMap(p => p._5.get).map(card => card._3)
+    val myMoney = view.gameInfo.players.filter(p => p._5.isDefined).map(p => p._2)
+    require(myMoney.size == 1)
+
+    val playersHandBalance = div(
+      cls := "toDo",
+      table(
+        cls := "a-faire",
+        tr(
+          th(cls := "tableHeader", "My hand"),
+          th(cls := "tableHeader", "My money")
+        ),
+        tr(
+          td(
+            table(
+              cls := "handTable",
+              tr(
+                for card <- myCards yield td(cls := "tableData", card)
+              )
+            )
+          ),
+          td(cls := "tableData", s"${myMoney(0)} $$")
+        )
+      )
+    )
+    val log = div(
+      
+    )
     // Combine tout dans une vue
     div(
       cls := "poker-ui",
       header,
       rolesTableContainer,
+      commCardPot,
+      playersHandBalance,
       actions
     )
   }
-  
+
 
   // Définir le CSS pour styliser l'interface
   override def css: String = super.css + """
@@ -171,5 +231,31 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     | .action-button:hover {
     |   background-color: #0056b3;
     | }
+    |
+    |.communal-card-pot {
+    |  padding: 20px;
+    |  background-color: #ffffff;
+    |  border: 2px solid #ccc;
+    |  border-radius: 5px;
+    |  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    |}
+    |
+    |.communalTable {
+    |  border-collapse: collapse;
+    |  width: 100%;
+    |}
+    |
+    |.tableHeader {
+    |  border: 1px solid #ddd;
+    |  padding: 8px;
+    |  text-align: center;
+    |  background-color: #f2f2f2;
+    |}
+    |
+    |.tableData {
+    |  border: 1px solid #ddd;
+    |  padding: 8px;
+    |  text-align: center;
+    |}
     """.stripMargin
 }
