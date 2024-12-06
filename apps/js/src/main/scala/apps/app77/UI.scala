@@ -36,7 +36,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     )
 
     // Les descriptions des lignes
-    val headers = List("Role", "Name")
+    val headers = List("Role", "Name","Money")
     // Tableau des joueurs et leurs rôles
     val rolesTableContainer = div(
       cls := "roles-table-container",
@@ -52,8 +52,15 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
                 case Role.SmallBlind => s"smallBlind(${view.gameConfig.smallBlind})"
                 case Role.BigBlind => s"BigBlind(${view.gameConfig.bigBlind})"
                 case Role.Normal => s""
-            } else
-              s"${userId}" + s"${money}" + "$"
+            } else if(rowData == 1)
+              if(view.gameInfo.players.filter(p => p._5.isDefined).head._1 == userId){
+                frag(b(s"${userId}"),img(src := "/static/hourglass.gif", alt := "Timer", cls := "timer-icon"))
+              }else{
+                s"${userId}"
+              }
+            else{
+              s"${money}$$"
+            }
             )
           )
         )
@@ -88,6 +95,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
         )
       )
     )
+
     //Comunal Card + Pot (5 cartes, parfois  certaines de dos, représenté par ?), + une colonne avec le pot
     // Récupérer les cartes communes et ajouter des cartes vides si nécessaire
     val commCards = view._1.communalCards
@@ -99,31 +107,61 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
         table(
           cls := "communalTable",
           tr(
-            th(cls := "tableHeader", "Communal Cards"),
-            th(cls := "tableHeader", "Pot")
-          ),
-          tr(
             td(
               table(
                 cls := "communalTable",
                 tr(
-                  for(card <- cards) yield td(cls := "tableData", card)
+                  for card <- cards yield td(cls := "card", card)
                 )
               )
-            ),
-            td(cls := "tableData", s"${view.gameInfo.pot} $$")
+            )
           )
         )
       )
 
-  
+    val myCards = view.gameInfo.players.filter(p => p._5.isDefined).flatMap(p => p._5.get).map(card => card._3)
+    val myMoney = view.gameInfo.players.filter(p => p._5.isDefined).map(p => p._2)
+    require(myMoney.size == 1)
+
+    val playersHandBalance = div(
+      cls := "toDo",
+      table(
+        cls := "a-faire",
+        tr(
+          th(cls := "tableHeader", "My hand"),
+          th(cls := "tableHeader", "My money"),
+          th(cls := "tableHeader", "Pot")
+        ),
+        tr(
+          td(
+            table(
+              cls := "handTable",
+              tr(
+                for card <- myCards yield td(cls := "cardHand", card)
+              )
+            )
+          ),
+          td(cls := "tableData moneyColumn", s"${myMoney(0)} $$"),
+          td(cls := "tableData potColumn", s"${view.gameInfo.pot} $$")
+        )
+      )
+    )
+
+    val logs = ul(
+      cls := "logs",
+      for log <- view.gameInfo.logs.reverse yield li(s"${log}")
+    )
+
     // Combine tout dans une vue
     frag(
       p(
         cls := "poker-ui",
         header,
         rolesTableContainer,
-        actions
+        commCardPot,
+        playersHandBalance,
+        actions,
+        logs
       )
     )
   }
@@ -179,6 +217,31 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     | .roles-table-container {
     |   overflow-x: auto; /* Permet le défilement horizontal si nécessaire */
     | }
+    |
+    | .timer-icon {
+    |   width: 50px;
+    |   height: 50px;
+    |   margin-left: 5px;
+    |   vertical-align: middle;
+    | }
+    | .handTable td, .communalTable td {
+    |   text-align: center;
+    |   border = none;
+    | }
+    | .card {
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 8em; /* Agrandir les cartes */
+    |  color: #ffffff;
+    | }
+    | .cardHand{
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 6.5em; /* Agrandir les cartes */
+    | }
+    |
     | .actions {
     |   display: flex;
     |   justify-content: center;
@@ -199,20 +262,29 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     | .action-button:hover {
     |   background-color: #0056b3;
     | }
-    |
     | .communal-card-pot {
     |   padding: 20px;
-    |   background-color: #ffffff;
-    |   border: 2px solid #ccc;
-    |   border-radius: 5px;
+    |   background-image: url('/static/table.jpg'); /* Chemin vers votre image */
+    |   background-size: cover; /* Ajuste l'image pour couvrir tout l'arrière-plan */
+    |   background-position: center; /* Centre l'image */
+    |   background-repeat: no-repeat; /* Évite la répétition de l'image */
+    |   border-radius: 5px; /* Suppression de la bordure */
+    |   text-align: center;
+    |   display: flex;
+    |   justify-content: center; /* Centre le tableau horizontalement */
+    |   align-items: center;
     |   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    |   width: 100%; /* S'assurer que le tableau prend tout l'espace disponible */
     | }
     |
-    | .communalTable {
-    |   border-collapse: collapse;
-    |   width: 100%;
-    | }
     |
+    | .communalTable td, .communalTable th {
+    |   margin: 0 auto;
+    |   padding: 8px;
+    |   text-align: center;
+    |   border: none; /* Conserver les bordures des cellules */
+    |   width: 20%; /* Uniformiser la taille des cellules */
+    | }
     | .tableHeader {
     |   border: 1px solid #ddd;
     |   padding: 8px;
@@ -220,10 +292,41 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   background-color: #f2f2f2;
     | }
     |
-    | .tableData {
+    | .potColumn {
+    |   width: 40%; /* Largeur définie par vous */
+    |   text-align: center; /* Centrer le texte */
+    | }
+    |
+    | .tableData moneyColumn{
+    |  padding: 10px; /* Espacement interne */
+    |  text-align: center;
+    | }
+    |
+    | .handTable td {
+    |  text-align: center;
+    |  width: auto; /* Laisser les cartes ajuster leur propre largeur */
+    | }
+    |
+    | .logs {
+    |   margin: 10px auto;
+    |   padding: 10px;
+    |   width: 90%; /* Adapte la largeur des logs */
+    |   max-height: 120px; /* Affiche les 4 premiers messages (approximativement) */
+    |   overflow-y: scroll; /* Ajoute une barre de défilement verticale */
     |   border: 1px solid #ddd;
-    |   padding: 8px;
-    |   text-align: center;
+    |   border-radius: 5px;
+    |   background-color: #f9f9f9;
+    |   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    | }
+    |
+    | .logs li {
+    |   padding: 5px 10px;
+    |   border-bottom: 1px solid #ddd;
+    |   font-size: 0.9em;
+    | }
+    |
+    | .logs li:last-child {
+    |   border-bottom: none;
     | }
     """.stripMargin
 }
