@@ -69,8 +69,8 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     // Actions disponibles pour le joueur
     val actions = div(
       cls := "actions",
-      button(cls := "action-button", onclick := { () => sendEvent(Event.Fold()) }, "Fold"),
-      button(cls := "action-button", onclick := { () => sendEvent(Event.Check()) }, "Call"),
+      button(cls := "action-button-fold", onclick := { () => sendEvent(Event.Fold()) }, "Fold"),
+      button(cls := "action-button-call", onclick := { () => sendEvent(Event.Check()) }, "Call"),
       div(
         cls := "raise-container",
         input(
@@ -81,7 +81,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
           cls := "raise-input"
         ),
         button(
-          cls := "action-button",
+          cls := "action-button-raise",
           onclick := { () =>
             val inputElement = dom.document
               .getElementById("raise-input")
@@ -142,7 +142,21 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
             )
           ),
           td(cls := "tableData moneyColumn", s"${myMoney(0)} $$"),
-          td(cls := "tableData potColumn", s"${view.gameInfo.pot} $$")
+          td(
+          cls := "tableData potColumn",
+          div(
+            cls := "pot-display",
+            div(
+              cls := "pot-amount",
+              span(s"${view.gameInfo.pot} $$") // Montant au-dessus
+            ),
+            img(
+              src := "/static/pot.png", // Chemin de l'image du pot
+              alt := "Pot",            // Texte alternatif
+              cls := "pot-image-large" // Nouvelle classe CSS pour agrandir l'image
+              )
+            )
+          )
         )
       )
     )
@@ -249,11 +263,29 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   margin-top: 20px;
     | }
     |
-    | .action-button {
+    | .action-button-fold {
     |   padding: 10px 20px;
     |   font-size: 1em;
     |   color: white;
-    |   background-color: #007bff;
+    |   background-color: #fc0000;
+    |   border: none;
+    |   border-radius: 5px;
+    |   cursor: pointer;
+    | }
+    | .action-button-call {
+    |   padding: 10px 20px;
+    |   font-size: 1em;
+    |   color: white;
+    |   background-color: #42cc18;
+    |   border: none;
+    |   border-radius: 5px;
+    |   cursor: pointer;
+    | }
+    | .action-button-raise {
+    |   padding: 10px 20px;
+    |   font-size: 1em;
+    |   color: white;
+    |   background-color: #EFBF04;
     |   border: none;
     |   border-radius: 5px;
     |   cursor: pointer;
@@ -300,6 +332,24 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     | .tableData moneyColumn{
     |  padding: 10px; /* Espacement interne */
     |  text-align: center;
+    | }
+    | 
+    | .pot-display {
+    |   display: flex;
+    |   flex-direction: column; /* Colonne pour aligner le montant au-dessus de l'image */
+    |   align-items: center;    /* Centre le contenu */
+    |   gap: 10px;              /* Espace entre le montant et l'image */
+    | }
+    |
+    | .pot-amount {
+    |   font-size: 1.5em; /* Augmente la taille de la police pour le montant */
+    |   font-weight: bold;
+    | }
+    |
+    | .pot-image-large {
+    |   width: 150px; /* Augmente la taille de l'image */
+    |   height: 150px;
+    |   object-fit: contain; /* Conserve les proportions de l'image */
     | }
     |
     | .handTable td {
