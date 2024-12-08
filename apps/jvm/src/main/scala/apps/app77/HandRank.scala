@@ -162,8 +162,10 @@ object HandRank:
     val suits = cards.map((suit, _, _) => suit)
     val numbers = cards.map((_, number, _) => number)
     
-    val suitCount: Map[Suit, Int] = suits.groupBy(identity).view.mapValues(_.size).toMap
-    val numbersCount: Map[Int, Int] = numbers.groupBy(identity).view.mapValues(_.size).toMap
+//    val suitCount: Map[Suit, Int] = suits.groupBy(identity).view.mapValues(_.size).toMap
+    val suitCount: Map[Suit,Int] = suits.groupBy(identity).map((suit,occurences) => (suit,occurences.size)) 
+    val numbersCount: Map[Int, Int] = numbers.groupBy(identity).map((suit,occurences) => (suit,occurences.size))
+    //same here
 
     val flushSuitOption: Option[Suit] = suitCount.find((_, count) => count >= 5).map((suit, _) => suit)
 
