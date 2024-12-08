@@ -1,10 +1,8 @@
 package apps.app77
-
 import cs214.webapp.*
 import cs214.webapp.server.{StateMachine}
 import scala.util.{Random, Try}
 import GamePhase.*
-import CardHelper.*
 
 class Logic extends StateMachine[Event, State, View]:
 
@@ -15,7 +13,7 @@ class Logic extends StateMachine[Event, State, View]:
     year = 2024
   )
 
-  override val wire = WireCopy
+  override val wire = Wire
 
   override def init(clients: Seq[UserId]): State =
     State(
@@ -94,3 +92,4 @@ class Logic extends StateMachine[Event, State, View]:
     if renderStates.length == 2 then
       Seq(renderStates(0), Action.Pause(100), renderStates(1))
     else renderStates
+
