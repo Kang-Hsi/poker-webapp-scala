@@ -560,6 +560,7 @@ extension (state: State)
         .resetFlop()
         .populateBlinds
         .executeBlinds()
+        .setMinRaise()
 
   /** Returns state with number of rounds increased.
     *

@@ -21,7 +21,7 @@ class Logic extends StateMachine[Event, State, View]:
       gameInfo = initGameInfo(clients),
       deck = Nil,
       gameConfig = initGameConfig()
-    )
+    ).transitionRound()
     // transitionState
 
   override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] =
