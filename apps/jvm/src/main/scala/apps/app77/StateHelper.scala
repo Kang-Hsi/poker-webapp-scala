@@ -163,12 +163,16 @@ extension (state: State)
       case Event.Bet(amount) =>
         require(amount > 0, "cannot bet <= 0")
 
+        
         // shouldn't happen though
         if player.getMoney() < amount then
           throw IllegalMoveException("Not enough money")
 
         val totalBet = player.getBetAmount() + amount
         val callAmount = state.getCallAmount()
+
+        println("DEBUG: " + user + " callAmount = " + callAmount)
+        println("DEBUG: " + user + " old bet amount " + player.getBetAmount() + " and new bet amount: " + totalBet)
 
         // player is calling
         if totalBet == callAmount then
@@ -295,10 +299,11 @@ extension (state: State)
     *   state with all players not talked.
     */
   def withNoPlayersTalked(): State =
-
+    println("DEBUG: WITH NO PLAYERS TALKED")
     val players = state.gameInfo.players
     val playersNoTalked = players.map(_.withHasTalked(false))
     val gameInfoUpdated = state.gameInfo.copy(players = playersNoTalked)
+
 
     state.copy(gameInfo = gameInfoUpdated)
 
@@ -358,7 +363,7 @@ extension (state: State)
     val playersWithIndex = players.zipWithIndex
 
     val playersUpdated = playersWithIndex.map((player, index) =>
-      if index == userIndex then player.withMoney(moneyToAddOrSub) else player
+      if index == userIndex then player.updateMoney(moneyToAddOrSub) else player
     )
 
     val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
@@ -482,6 +487,7 @@ extension (state: State)
     *   flop state.
     */
   def goToFlop(): State =
+    println("DEBUG: GOING TO FLOP")
     state.addCommunal(3).cleanupNextPhase().nextPhase()
 
   /** Returns turn state.
@@ -490,6 +496,7 @@ extension (state: State)
     *   turn state.
     */
   def goToTurn(): State =
+    println("DEBUG: GOING TO TURN")
     state.addCommunal(4).cleanupNextPhase().nextPhase()
 
   /** Returns river state.
@@ -498,6 +505,7 @@ extension (state: State)
     *   river state.
     */
   def goToRiver(): State =
+    println("DEBUG: GOING TO RIVER")
     state.addCommunal(5).cleanupNextPhase().nextPhase()
 
   /** Returns state cleaned up.
@@ -603,6 +611,23 @@ extension (state: State)
     val smallBlind = state.gameConfig.smallBlind
     val bigBlind = state.gameConfig.bigBlind
 
+    val updatedPlayers = players.map(player =>
+      player.getRole() match
+        case SmallBlind =>
+          if player.getMoney() < smallBlind then player.withStatus(Status.Spectating) else
+            player.updateBetAmount(smallBlind).updateMoney(-smallBlind)
+
+        case BigBlind => 
+          if player.getMoney() < bigBlind then player.withStatus(Status.Spectating) else 
+            player.updateBetAmount(bigBlind).updateMoney(-bigBlind)
+
+        case _ => player
+      )
+
+    val gameInfoUpdated = state.gameInfo.copy(players = updatedPlayers)
+    state.copy(gameInfo = gameInfoUpdated)
+
+    /*
     val smallBlindPlayer =
       players.find(player => player.getRole() == SmallBlind).get
     val bigBlindPlayer =
@@ -614,7 +639,7 @@ extension (state: State)
     val stateBB =
       stateSB.applyEventNaive(bigBlindPlayer.getUserId(), Event.Bet(bigBlind))
 
-    stateBB
+    stateBB*/
 
   /** Returns state with communal cards reset.
     *
