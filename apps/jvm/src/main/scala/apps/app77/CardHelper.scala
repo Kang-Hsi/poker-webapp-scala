@@ -7,9 +7,9 @@ import apps.app77.HandRank
 
 object CardHelper:
 
-/**
-   * Used Chat GPT for generating this list
-  **/
+  /**
+   * Used Chat GPT for generating list of card representations.
+   */
   val allRepresentations = List(
   // Hearts
   "🂱", "🂲", "🂳", "🂴", "🂵", "🂶", "🂷", "🂸", "🂹", "🂺", "🂻", "🂽", "🂾",
@@ -22,23 +22,22 @@ object CardHelper:
 )
 
   /**
-   * The basic ordered deck of cards
-**/
+   * The basic ordered deck of cards. 
+   * From 2 to Ace (14).
+   */
   val allCards: Deck =
-    val repr = allRepresentations.iterator
+    val representation = allRepresentations.iterator
     (for
       suit <- Suit.values
-      nb <- 2 to 14
+      number <- 2 to 14
     yield
-      (suit, nb, repr.next())
+      (suit, number, representation.next())
     ).toList
 
 
-  /** Find the winner from a list of PlayerInfo
-    * Not sue if the playerrs are already filtered out to be players that are playign, so keep checking
-    * 
+  /** Find the winner(s) of a poker round from a list of PlayerInfo.
     *
-    * @return
+    * @return the winner(s) of a poker round. 
     */
   def findWinner(players: List[PlayerInfo], communalCards: List[Card]): List[PlayerInfo] = 
     val playersPlaying = players.filter(_.isPlaying())
@@ -63,13 +62,15 @@ object CardHelper:
     winners
     
 
-  
-  
+  extension(deck: Deck)
 
-
-  extension (d:Deck)
-    def shuffle()=
-      Random.shuffle(d)
+    /**
+      * Returns a deck shuffled.
+      *
+      * @return a deck shuffles.
+      */
+    def shuffle() =
+      Random.shuffle(deck)
 
 
 
