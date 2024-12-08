@@ -6,7 +6,7 @@ import cs214.webapp.*
 /**
   * Get the Global Configuration for our game.
   **/
-  val conf = Configuration.get
+  val configuration = Configuration.get
 
 
   private val minPlayers = 3
@@ -26,9 +26,9 @@ import cs214.webapp.*
       
   private def initGameConfig(): GameConfig=
     GameConfig(
-      conf.getMaxRound,
-      conf.getSmallBlind,
-      conf.getBigBlind
+      configuration.getMaxRound,
+      configuration.getSmallBlind,
+      configuration.getBigBlind
     )
 
   
@@ -60,7 +60,7 @@ import cs214.webapp.*
     import Role.*
     assert(clients.length >= minPlayers, cs214.webapp.AppException("Not enough players ! Minimum is " + minPlayers ))
 
-    val initialMoney = conf.getInitialMoney
+    val initialMoney = configuration.getInitialMoney
 
     (for
       (userId, position) <- clients.zipWithIndex
