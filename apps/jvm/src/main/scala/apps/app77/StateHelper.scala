@@ -49,7 +49,11 @@ extension (state: State)
     *   state with players turn rotated.
     */
   def rotatePlayerTurn(): State =
-    state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
+    val newRotatedState = state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
+    if !newRotatedState.gameInfo.players.head.isOnlyPlaying() then
+      newRotatedState.rotatePlayerTurn()
+    else
+      newRotatedState
 
   /** Returns state with the role of the players rotated. This function is
     * implemented in a "hard way". Since we have to assume it could be called
@@ -71,7 +75,12 @@ extension (state: State)
     *   state with the order of the round set.
     */
   def setBeginOfRoundOrder(): State =
-    state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal(state))
+    val stateWithOrder = state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal(state))
+    
+    if !stateWithOrder.gameInfo.players.head.isOnlyPlaying() then
+      stateWithOrder.rotatePlayerTurn()
+    else
+      stateWithOrder
 
   /** Returns state with the blinds populated (depending on the game's
     * configuration).
@@ -139,6 +148,7 @@ extension (state: State)
     // the user is ensured to be playing
 
     // the player must then be its turn:
+
     if userIndex != 0 then throw IllegalMoveException("please wait your turn")
 
     event match
@@ -559,8 +569,9 @@ extension (state: State)
         .distributeCards()
         .resetFlop()
         .populateBlinds
-        .executeBlinds()
         .setMinRaise()
+//.executeBlinds()
+
 
   /** Returns state with number of rounds increased.
     *
@@ -748,7 +759,7 @@ extension (gameInfo: GameInfo)
     * @return
     *   gameInfo with players turn rotated.
     */
-  def rotatePlayerTurnInternal(): GameInfo =
+  def rotatePlayerTurnInternal(): GameInfo = //TODO check players that are not playing
     gameInfo.copy(players = {
       val oldPlayers = gameInfo.players
       oldPlayers.drop(1).appended(oldPlayers.head)

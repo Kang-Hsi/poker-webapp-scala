@@ -64,7 +64,7 @@ class Logic extends StateMachine[Event, State, View]:
 
         // the only thing left is to rotate the players turn ig
 
-        renderTheStates(Seq(stateWithActionNaive.rotatePlayerTurn()))
+        renderTheStates(Seq(stateWithActionNaive))
     })
 
   override def project(state: State)(userId: UserId): View =
