@@ -17,7 +17,7 @@ class Logic extends StateMachine[Event, State, View]:
 
   override def init(clients: Seq[UserId]): State =
     State(
-      gamePhase = PreFlop,
+      gamePhase = EndRound,
       gameInfo = initGameInfo(clients),
       deck = Nil,
       gameConfig = initGameConfig()
@@ -37,6 +37,8 @@ class Logic extends StateMachine[Event, State, View]:
       // So that we skip to the river
       // here is the first  test for this:
 
+      println("DEBUG: hasEveryoneTalked: " + stateWithActionNaive.hasEveryoneTalked)
+      println("DEBUG: hasEveryoneBettedSameAmount: " + stateWithActionNaive.hasEveryoneBettedSameAmount)
       if stateWithActionNaive.gameInfo.getAllPlayingPlayers.length == 1
       then
 

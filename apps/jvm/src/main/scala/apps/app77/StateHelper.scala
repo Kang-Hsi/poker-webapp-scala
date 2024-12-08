@@ -168,6 +168,8 @@ extension (state: State)
             "You cannot check, as you need to to call/raise!"
           )
 
+        println("DEBUG: " + " bet Amount: " + player.getBetAmount())
+
         state.applyCheck(user, userIndex)
 
       case Event.Bet(amount) =>
@@ -352,7 +354,7 @@ extension (state: State)
     val playersWithIndex = players.zipWithIndex
 
     val playersUpdated = playersWithIndex.map((player, index) =>
-      if index == userIndex then player.withBetAmount(amount) else player
+      if index == userIndex then player.updateBetAmount(amount) else player
     )
 
     val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
@@ -570,6 +572,7 @@ extension (state: State)
     else
       state
         .increaseRoundNumber()
+        .nextPhase()
         .setStatus()
         .rotatePlayerRole()
         .setBeginOfRoundOrder()
@@ -577,8 +580,9 @@ extension (state: State)
         .distributeCards()
         .resetFlop()
         .populateBlinds
+        .executeBlinds()
         .setMinRaise()
-//.executeBlinds()
+        
 
 
   /** Returns state with number of rounds increased.
@@ -706,8 +710,12 @@ extension (state: State)
     */
   def hasEveryoneBettedSameAmount: Boolean =
     val callAmount = state.getCallAmount()
-    val betAmounts = state.gameInfo.players.map(_.getBetAmount())
+    val betAmounts = state.gameInfo.players
+      .map(player => if player.isOnlyPlaying() then player.getBetAmount() else callAmount)
+
+    println("DEBUG: BET AMOUNTS -> " + betAmounts)
     betAmounts.forall(bet => bet == callAmount)
+
 
   /** Returns state with end game phase.
     * @todo
@@ -720,54 +728,6 @@ extension (state: State)
       gamePhase = EndGame
     )
 
-  /** To be called before the start of a round. Will populate the state with a
-    * new deck. Will rotate the players roles & set the right order. Will
-    * populate the players with cards.
-    *
-    * USELESS NOW
-    */
-  def startRound() =
-
-    import apps.app77.CardHelper.shuffle
-    val stateWithNewRoles = state.rotatePlayerRole()
-    val stateWithRightOrder =
-      stateWithNewRoles.setBeginOfRoundOrder()
-
-    val stateWithNewShuffledDeck =
-      stateWithRightOrder.copy(
-        deck = CardHelper.allCards.shuffle()
-      )
-
-  // stateWithNewShuffledDeck.distributeCardsToPlayers().populateBlinds
-
-  /** fais tout le nécéssaire pour finir le round (trouves le winner, lui donnes
-    * largent) applée juste avant startRound
-    *
-    * Will find winner and add to his money the pot amount Will set pot to 0 ?
-    * NEST PLUS UTILE / VALABLE
-    */
-  def endRound(): State =
-    val State(gamePhase, gameInfo, deck, gameConfig) = state
-    require(gamePhase == GamePhase.EndRound)
-
-    val winner = CardHelper.findWinner(
-      state.gameInfo.players,
-      state.gameInfo.communalCards
-    );
-
-    val players = gameInfo.players;
-
-    // plus simple de faire une map? obligé bah de parcourir tt les joueurs
-    val playersUpdated = players.map(player =>
-      if player.getUserId() == winner.head.getUserId() then
-        player.updateMoney(gameInfo.pot)
-      else player
-    )
-
-    // val updatedGameInfo = gameInfo.copy(pot = 0)
-    val gameInfoUpdated = gameInfo.copy(players = playersUpdated)
-    val newState = state.copy(gameInfo = gameInfoUpdated)
-    newState.nextPhase()
 
 extension (gameInfo: GameInfo)
 
