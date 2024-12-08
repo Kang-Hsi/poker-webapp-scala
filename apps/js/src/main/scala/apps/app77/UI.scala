@@ -38,6 +38,10 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     // Les descriptions des lignes
     val headers = List("Role", "Name","Money")
     // Tableau des joueurs et leurs rôles
+    // TODO erreurs : Le sablier n'est pas sur la bonne personne (le sablier est sur la personne qui regarde le site a chaque fois)
+    //                La liste ne doit pas etre dans le meme ordre que celle que vous revevez (car l'odre change a chaque tour)
+    //                Il faut que vou créer une nouvelle liste ordonnée avec Dealer, Sb, Bb, et le rest (ordonné par ordre de jeu de passage de base)
+    //  - il faudrait mettre une ligne betAmount (pourr voir le bet de chaque joueur
     val rolesTableContainer = div(
       cls := "roles-table-container",
       table(
@@ -67,6 +71,9 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     )
 
     // Actions disponibles pour le joueur
+    // TODO A changer : le boutton call doit montrer l'argent qu'il faut payer pour call (attention a ne pas utiliser State.callAmount car ca ne marche pas, il faut utiliser la state.getCallAmount codée dans logique (copiez la fonction et adaptez la pour la view), 
+    // Donc si la personne doit call, le boutton doit envoyer un BetEvent (comme convenu lundi dernier)
+    // Sinon si le betAmount de al personne == callAmount, le boutton change en Check et l'on envois un checkEvent
     val actions = div(
       cls := "actions",
       button(cls := "action-button-fold", onclick := { () => sendEvent(Event.Fold()) }, "Fold"),
