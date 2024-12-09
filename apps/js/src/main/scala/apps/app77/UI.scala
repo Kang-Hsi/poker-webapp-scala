@@ -76,7 +76,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     )
 
     // Actions disponibles pour le joueur
-    // TODO A changer : le boutton call doit montrer l'argent qu'il faut payer pour call (attention a ne pas utiliser State.callAmount car ca ne marche pas, il faut utiliser la state.getCallAmount codée dans logique (copiez la fonction et adaptez la pour la view), 
+    // TODO A changer : le boutton call doit montrer l'argent qu'il faut payer pour call (attention a ne pas utiliser State.callAmount car ca ne marche pas, il faut utiliser la state.getCallAmount codée dans logique (copiez la fonction et adaptez la pour la view),
     // Donc si la personne doit call, le boutton doit envoyer un BetEvent (comme convenu lundi dernier)
     // Sinon si le betAmount de al personne == callAmount, le boutton change en Check et l'on envois un checkEvent
     val actions = div(
@@ -140,7 +140,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     //Comunal Card + Pot (5 cartes, parfois  certaines de dos, représenté par ?), + une colonne avec le pot
     // Récupérer les cartes communes et ajouter des cartes vides si nécessaire
     val commCards = view._1.communalCards
-    val emptyCards = List.fill(5 - commCards.size)(" ? ")
+    val emptyCards = List.fill(5 - commCards.size)(" 🂠 ")
     val cards = commCards.map(_._3) ++ emptyCards
 
     val commCardPot = div(
@@ -405,7 +405,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |  padding: 10px; /* Espacement interne */
     |  text-align: center;
     | }
-    | 
+    |
     | .pot-display {
     |   display: flex;
     |   flex-direction: column; /* Colonne pour aligner le montant au-dessus de l'image */
