@@ -48,6 +48,17 @@ enum Role:
   case BigBlind
   case Normal
 
+given RoleOrd: Ordering[Role] with 
+  def compare(a: Role, b: Role) = 
+    (a,b) match
+      case (Role.Dealer,_) => -1
+      case (_, Role.Dealer) => 1
+      case (Role.SmallBlind, _) => -1
+      case (_, Role.SmallBlind) => 1
+      case (Role.BigBlind, _) => -1
+      case (_ , Role.BigBlind) => 1
+      case (Role.Normal, Role.Normal) => 0
+
 type hasTalked = Boolean
 
 type potContribution = Money

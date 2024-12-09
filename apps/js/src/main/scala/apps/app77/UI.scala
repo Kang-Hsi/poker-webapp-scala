@@ -43,7 +43,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     //                Il faut que vou créer une nouvelle liste ordonnée avec Dealer, Sb, Bb, et le rest (ordonné par ordre de jeu de passage de base)
     //  - il faudrait mettre une ligne betAmount (pourr voir le bet de chaque joueur
     val currentplayer = view.gameInfo.players(0)._1
-
+    val orderedListPlayers = view.gameInfo.players.sortBy(p => p._3)
     val rolesTableContainer = div(
       cls := "roles-table-container",
       table(
@@ -51,7 +51,8 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
         for ((header, rowData) <- headers.zipWithIndex)
         yield tr(
           td(b(header)),
-          for ((userId,money,role,status,_,betAmount,hasTalked,potContribution) <- view.gameInfo.players) yield td(
+          for ((userId,money,role,status,_,betAmount,hasTalked,potContribution) <- orderedListPlayers) yield td(
+            cls := s"${if (status == Status.Spectating) "folded-player" else ""}",
             if (rowData == 0) {
               role match
                 case Role.Dealer => s"Dealer"
@@ -82,21 +83,28 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
       cls := "actions",
 
       // button fold
-      button(cls := "action-button-fold", onclick := { () => sendEvent(Event.Fold()) }, "Fold"),
+      button(
+        cls := s"action-button-fold ${if (getclient(view)._4 == Status.Spectating) "action-button-disabled" else ""}",
+        onclick := { () =>
+          if (getclient(view)._4 != Status.Spectating) sendEvent(Event.Fold())
+        },
+        "Fold"
+      ),
 
       // button call
       button(
-        cls := "action-button-call",
-        onclick := { () =>{
-          if(getcallAmount(view) == getclient(view)._6){
-            sendEvent(Event.Check())
-          }else{
-            val callAmount = getcallAmount(view)
-            val client = getclient(view)
-            val amountToBet = math.min(client._2, callAmount-client._6)
-            sendEvent(Event.Bet(amountToBet))
+        cls := s"action-button-call ${if (getclient(view)._4 == Status.Spectating) "action-button-disabled" else ""}",
+        onclick := { () =>
+          if (getclient(view)._4 != Status.Spectating) {
+            if (getcallAmount(view) == getclient(view)._6) {
+              sendEvent(Event.Check())
+            } else {
+              val callAmount = getcallAmount(view)
+              val client = getclient(view)
+              val amountToBet = math.min(client._2, callAmount - client._6)
+              sendEvent(Event.Bet(amountToBet))
+            }
           }
-        }
         },
         callButtonText(view)
       ),
@@ -112,15 +120,17 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
           cls := "raise-input"
         ),
         button(
-          cls := "action-button-raise",
+          cls := s"action-button-raise ${if (getclient(view)._4 == Status.Spectating) "action-button-disabled" else ""}",
           onclick := { () =>
-            val inputElement = dom.document
-              .getElementById("raise-input")
-              .asInstanceOf[HTMLInputElement]
-            val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
-            // Vérifie si la valeur est inférieure au min et corrige si nécessaire
-            val correctedAmount = math.max(raiseAmount, getcallAmount(view))
-            sendEvent(Event.Bet(raiseAmount))
+            if (getclient(view)._4 != Status.Spectating) {
+              val inputElement = dom.document
+                .getElementById("raise-input")
+                .asInstanceOf[HTMLInputElement]
+              val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
+              // Vérifie si la valeur est inférieure au minimum
+              val correctedAmount = math.max(raiseAmount, getcallAmount(view))
+              sendEvent(Event.Bet(correctedAmount))
+            }
           },
           "Raise"
         )
@@ -282,6 +292,11 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     | .roles-table-container {
     |   overflow-x: auto; /* Permet le défilement horizontal si nécessaire */
     | }
+    | .folded-player {
+    |   opacity: 0.5; /* Réduit l'opacité pour griser */
+    |   color: #888; /* Change la couleur du texte */
+    |   background-color: #f0f0f0; /* Couleur de fond légèrement différente */
+    | }
     |
     | .timer-icon {
     |   width: 50px;
@@ -344,6 +359,12 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |
     | .action-button:hover {
     |   background-color: #0056b3;
+    | }
+    |
+    | .action-button-disabled {
+    |  opacity: 0.5; /* Réduire l'opacité */
+    |  pointer-events: none; /* Empêche tout clic ou interaction */
+    |  cursor: not-allowed; /* Indique visuellement que le bouton est désactivé */
     | }
     | .communal-card-pot {
     |   padding: 20px;
