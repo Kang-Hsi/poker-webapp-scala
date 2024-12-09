@@ -458,6 +458,8 @@ extension (state: State)
           "the transition shouldn't be called in endRound / endGame as they are only 'ephemeral' states"
         )
 
+
+
   /** Returns state with the pot(s) distributed to each player.
     *
     * Note: See the documentation of distributePotsInternal for more

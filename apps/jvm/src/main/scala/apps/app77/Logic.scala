@@ -43,9 +43,12 @@ class Logic extends StateMachine[Event, State, View]:
       then
 
         println("INFO : We are skipping to endRound because only one player is left")
+        
+  
+        val nbToSkip = 4 - stateWithActionNaive.gamePhase.ordinal 
 
         renderTheStates(
-          stateWithActionNaive.goToEndRound()
+          transitionPhaseNTimes(Seq(stateWithActionNaive),nbToSkip)
         ) // TODO verify that the goToEndRoudn satifies all ; i did not checked
       else if stateWithActionNaive.hasEveryoneTalked &&
         stateWithActionNaive.hasEveryoneBettedSameAmount
@@ -94,4 +97,11 @@ class Logic extends StateMachine[Event, State, View]:
     if renderStates.length == 2 then
       Seq(renderStates(0), Action.Pause(100), renderStates(1))
     else renderStates
+    
+  private def transitionPhaseNTimes(state: Seq[State], times : Int):Seq[State]=
+   if (times == 0) then
+    state
+   else
+    transitionPhaseNTimes(state.head.transitionPhase , times - 1)  
 
+  
