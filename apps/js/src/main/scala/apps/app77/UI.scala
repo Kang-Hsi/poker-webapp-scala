@@ -76,7 +76,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     )
 
     // Actions disponibles pour le joueur
-    // TODO A changer : le boutton call doit montrer l'argent qu'il faut payer pour call (attention a ne pas utiliser State.callAmount car ca ne marche pas, il faut utiliser la state.getCallAmount codée dans logique (copiez la fonction et adaptez la pour la view),
+    // TODO A changer : le boutton call doit montrer l'argent qu'il faut payer pour call (attention a ne pas utiliser State.callAmount car ca ne marche pas, il faut utiliser la state.getCallAmount codée dans logique (copiez la fonction et adaptez la pour la view), 
     // Donc si la personne doit call, le boutton doit envoyer un BetEvent (comme convenu lundi dernier)
     // Sinon si le betAmount de al personne == callAmount, le boutton change en Check et l'on envois un checkEvent
     val actions = div(
@@ -208,7 +208,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     // Combine tout dans une vue
     frag(
       p(
-        cls := "poker-ui",
+        cls := s"${if getclient(view)._1 == view.gameInfo.players(0)._1 then "poker-ui-clientTurn" else "poker-ui"}",
         header,
         rolesTableContainer,
         commCardPot,
@@ -244,7 +244,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
   }
   // Définir le CSS pour styliser l'interface
   override def css: String = super.css + """
-    | .app77 {
+    | .poker-ui {
     |   font-family: Arial, sans-serif;
     |   margin: auto;
     |   padding: 20px;
@@ -254,6 +254,17 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   text-align: center;
     |   justify-content: center;
     |
+    | }
+    | .poker-ui-clientTurn {
+    |   font-family: Arial, sans-serif;
+    |   margin: auto;
+    |   padding: 20px;
+    |   border: 6px solid #ccc;
+    |   border-color: #42eb05;
+    |   border-radius: 5px;
+    |   max-width: 200%;
+    |   text-align: center;
+    |   justify-content: center;
     | }
     | .header {
     |   text-align: center;
@@ -405,7 +416,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |  padding: 10px; /* Espacement interne */
     |  text-align: center;
     | }
-    |
+    | 
     | .pot-display {
     |   display: flex;
     |   flex-direction: column; /* Colonne pour aligner le montant au-dessus de l'image */
