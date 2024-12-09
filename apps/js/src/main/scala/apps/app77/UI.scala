@@ -36,12 +36,14 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     )
 
     // Les descriptions des lignes
-    val headers = List("Role", "Name","Money")
+    val headers = List("Role", "Name","Money", "Bet Amount")
     // Tableau des joueurs et leurs rôles
     // TODO erreurs : Le sablier n'est pas sur la bonne personne (le sablier est sur la personne qui regarde le site a chaque fois)
     //                La liste ne doit pas etre dans le meme ordre que celle que vous revevez (car l'odre change a chaque tour)
     //                Il faut que vou créer une nouvelle liste ordonnée avec Dealer, Sb, Bb, et le rest (ordonné par ordre de jeu de passage de base)
     //  - il faudrait mettre une ligne betAmount (pourr voir le bet de chaque joueur
+    val currentplayer = view.gameInfo.players(0)._1
+
     val rolesTableContainer = div(
       cls := "roles-table-container",
       table(
@@ -57,13 +59,15 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
                 case Role.BigBlind => s"BigBlind(${view.gameConfig.bigBlind})"
                 case Role.Normal => s""
             } else if(rowData == 1)
-              if(view.gameInfo.players.filter(p => p._5.isDefined).head._1 == userId){
+              if(userId == currentplayer){
                 frag(b(s"${userId}"),img(src := "/static/hourglass.gif", alt := "Timer", cls := "timer-icon"))
               }else{
                 s"${userId}"
               }
-            else{
+            else if(rowData == 2) {
               s"${money}$$"
+            }else{
+              s"${betAmount}$$"
             }
             )
           )
@@ -76,15 +80,35 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     // Sinon si le betAmount de al personne == callAmount, le boutton change en Check et l'on envois un checkEvent
     val actions = div(
       cls := "actions",
+
+      // button fold
       button(cls := "action-button-fold", onclick := { () => sendEvent(Event.Fold()) }, "Fold"),
-      button(cls := "action-button-call", onclick := { () => sendEvent(Event.Check()) }, "Call"),
+
+      // button call
+      button(
+        cls := "action-button-call",
+        onclick := { () =>{
+          if(getcallAmount(view) == getclient(view)._6){
+            sendEvent(Event.Check())
+          }else{
+            val callAmount = getcallAmount(view)
+            val client = getclient(view)
+            val amountToBet = math.min(client._2, callAmount-client._6)
+            sendEvent(Event.Bet(amountToBet))
+          }
+        }
+        },
+        callButtonText(view)
+      ),
+
+      // button raise
       div(
         cls := "raise-container",
         input(
           `type` := "number",
           id := "raise-input",
           placeholder := "Enter amount",
-          min := "10",
+          min := s"${getcallAmount(view)}",
           cls := "raise-input"
         ),
         button(
@@ -93,9 +117,9 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
             val inputElement = dom.document
               .getElementById("raise-input")
               .asInstanceOf[HTMLInputElement]
-            val raiseAmount = inputElement.value.toIntOption.getOrElse(10)
+            val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
             // Vérifie si la valeur est inférieure au min et corrige si nécessaire
-            val correctedAmount = math.max(raiseAmount, 10)
+            val correctedAmount = math.max(raiseAmount, getcallAmount(view))
             sendEvent(Event.Bet(raiseAmount))
           },
           "Raise"
@@ -126,10 +150,8 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
         )
       )
 
-    val myCards = view.gameInfo.players.filter(p => p._5.isDefined).flatMap(p => p._5.get).map(card => card._3)
-    val myMoney = view.gameInfo.players.filter(p => p._5.isDefined).map(p => p._2)
-    require(myMoney.size == 1)
-
+    val myCards = getclient(view)._5.get.map(card => card._3).toList
+    val myMoney = getclient(view)._2
     val playersHandBalance = div(
       cls := "toDo",
       table(
@@ -148,7 +170,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
               )
             )
           ),
-          td(cls := "tableData moneyColumn", s"${myMoney(0)} $$"),
+          td(cls := "tableData moneyColumn", s"${myMoney} $$"),
           td(
           cls := "tableData potColumn",
           div(
@@ -187,7 +209,29 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     )
   }
 
+  def getclient(view: View): PlayerInfo = {
+    val client = view.gameInfo.players.filter(p => p._5.isDefined)
+    require(client.size == 1)
+    client(0)
+  }
+  private def callButtonText(view: View): String = {
+    val clientMoney = getclient(view)._2
+    val callAmount = view.gameInfo.callAmount
 
+    if (clientMoney <= callAmount) {
+      s"ALLIN ${clientMoney} $$!!"
+    } else {
+      if(getcallAmount(view) == getclient(view)._6){
+        s"Check"
+      }else{
+         s"Call ${{getcallAmount(view)- getclient(view)._6}}$$"
+      }
+    }
+  }
+  private def getcallAmount(view: View):Money = {
+    val players = view.gameInfo.players
+    players.maxBy(p => p._6)._6
+  }
   // Définir le CSS pour styliser l'interface
   override def css: String = super.css + """
     | .app77 {
