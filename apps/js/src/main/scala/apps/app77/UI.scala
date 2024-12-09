@@ -140,8 +140,8 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     //Comunal Card + Pot (5 cartes, parfois  certaines de dos, représenté par ?), + une colonne avec le pot
     // Récupérer les cartes communes et ajouter des cartes vides si nécessaire
     val commCards = view._1.communalCards
-    val emptyCards = List.fill(5 - commCards.size)(" 🂠 ")
-    val cards = commCards.map(_._3) ++ emptyCards
+    val emptyCards = List.fill(5 - commCards.size)(Suit.Spades," 🂠 ")
+    val cards = commCards.map(c => (c._1, c._3)) ++ emptyCards
 
     val commCardPot = div(
       cls := "communal-card-pot",
@@ -152,7 +152,8 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
               table(
                 cls := "communalTable",
                 tr(
-                  for card <- cards yield td(cls := "card", card)
+                  for card <- cards yield td(
+                    cls := s"card ${if (card._1 == Suit.Heart|| card._1 == Suit.Diamond) "card-red" else "card-black"}", card._2)
                 )
               )
             )
@@ -160,7 +161,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
         )
       )
 
-    val myCards = getclient(view)._5.get.map(card => card._3).toList
+    val myCards = getclient(view)._5.get.map(card => (card._1,card._3)).toList
     val myMoney = getclient(view)._2
     val playersHandBalance = div(
       cls := "toDo",
@@ -176,7 +177,8 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
             table(
               cls := "handTable",
               tr(
-                for card <- myCards yield td(cls := "cardHand", card)
+                for card <- myCards yield td(
+                  cls := s"${if (card._1 == Suit.Heart|| card._1 == Suit.Diamond) "cardHand-red" else "cardHand-black"}", card._2)
               )
             )
           ),
@@ -319,18 +321,33 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   text-align: center;
     |   border = none;
     | }
-    | .card {
+    | .card-black {
     |  text-align: center; /* Centrer le contenu */
     |  display: inline-block; /* Assure un alignement horizontal */
     |  padding: 10px; /* Ajouter un espacement interne */
     |  font-size: 8em; /* Agrandir les cartes */
     |  color: #ffffff;
     | }
-    | .cardHand{
+    | .card-red {
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 8em; /* Agrandir les cartes */
+    |  color: #ff0000;
+    | }
+    |
+    | .cardHand-black{
     |  text-align: center; /* Centrer le contenu */
     |  display: inline-block; /* Assure un alignement horizontal */
     |  padding: 10px; /* Ajouter un espacement interne */
     |  font-size: 6.5em; /* Agrandir les cartes */
+    | }
+    | .cardHand-red{
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 6.5em; /* Agrandir les cartes */
+    |   color: #ff0000;
     | }
     |
     | .actions {
