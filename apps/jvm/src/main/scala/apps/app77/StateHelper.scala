@@ -582,6 +582,7 @@ extension (state: State)
         .populateBlinds
         .executeBlinds()
         .setMinRaise()
+        .addLog("Started new round")
         
 
 
@@ -609,7 +610,7 @@ extension (state: State)
         players = state.gameInfo.players.map(player =>
           if player.getMoney() <= 0 then
             player.withMoney(0).withStatus(Status.Spectating)
-          else player
+          else player.withStatus(Status.Playing)
         )
       )
     )
