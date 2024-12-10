@@ -231,6 +231,7 @@ extension (state: State)
     state
       .withPlayerUpdateStatus(userIndex, Status.Spectating)
       .withPlayerHasTalked(userIndex, true)
+      .addLog(user + " has folded")
       .rotatePlayerTurn()
 
   /** Returns state with a check event applied.
@@ -244,7 +245,10 @@ extension (state: State)
     */
   def applyCheck(user: UserId, userIndex: Int): State =
     println("INFO : " + user + " is checking.")
-    state.withPlayerHasTalked(userIndex, true).rotatePlayerTurn()
+    state
+      .withPlayerHasTalked(userIndex, true)
+      .addLog(user + " has called")
+      .rotatePlayerTurn()
 
   /** Returns state with bet event applied.
     *
@@ -269,11 +273,13 @@ extension (state: State)
       playerIsRaising: Boolean
   ): State =
     println("INFO : " + user + " is betting / calling.")
+    
+    val oldCheckAmount = state.getCallAmount()
 
     extension (state: State)
       def resetOrNotTheTalked() =
-        if playerIsRaising then state.withNoPlayersTalked()
-        else state
+        if playerIsRaising then state.withNoPlayersTalked().addLog(user + " is raising by " + (state.gameInfo.players(userIndex).getBetAmount() - oldCheckAmount) + "$")
+        else state.addLog(user + " called") 
 
     state
       .withPlayerUpdateMoney(userIndex, -amount)
@@ -446,7 +452,7 @@ extension (state: State)
         players = playersWithZeroBetAmount,
         pot = newPot
       )
-    )
+    ).addLog("Added " + allBetsTotal+"$ to the pot!")
 
     preTransitionnedState.gamePhase match
       case PreFlop => Seq(preTransitionnedState.goToFlop())
