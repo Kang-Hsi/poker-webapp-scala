@@ -164,17 +164,36 @@ class Tests extends WebappSuite[Event, State, View]:
     val thirdPlayerID = initialState.gameInfo.players(2)._1
     val currentBetAmount = init.getCallAmount()
     val player1Talked =
-      sm.transition(init)(firstPlayerID, Event.Bet(currentBetAmount - initialState.gameInfo.players(0)._6)).get(0) match
+      sm.transition(init)(firstPlayerID, Event.Bet(currentBetAmount - initialState.gameInfo.players.find(p => p._1 == firstPlayerID).get._6)).get(0) match
         case Action.Render(st) => st
         case _ => throw new IllegalStateException("Unexpected action type, expected Render")
     val player1And2havetalked =
-      sm.transition(player1Talked)(secondPlayerID, Event.Bet(currentBetAmount - initialState.gameInfo.players(1)._6)).get(0) match
+      sm.transition(player1Talked)(secondPlayerID, Event.Bet(currentBetAmount - initialState.gameInfo.players.find(p => p._1 == secondPlayerID).get._6)).get(0) match
         case Action.Render(st) => st
         case _ => throw new IllegalStateException("Unexpected action type, expected Render")
     assert(player1And2havetalked.gameInfo.players.filter(p => p._7).size == 2)
-    val thirdPlayerBetMore = sm.transition(player1And2havetalked)(thirdPlayerID, Event.Bet(10 + currentBetAmount - initialState.gameInfo.players(2)._6)).get(0) match
+    val thirdPlayerBetMore = sm.transition(player1And2havetalked)(thirdPlayerID, Event.Bet(10 + currentBetAmount - initialState.gameInfo.players.find(p => p._1 == thirdPlayerID).get._6)).get(0) match
       case Action.Render(st) => st
       case _ => throw new IllegalStateException("Unexpected action type, expected Render")
     assert(thirdPlayerBetMore.gameInfo.players.find(p => p._7).size == 1)
-
   }
+
+
+  test("if everyone go AllIn with the same Amount we should go to endRound") {
+    val users = USER_IDS
+    val init = initialState
+    val firstPlayerID = initialState.gameInfo.players(0)._1
+    val secondPlayerID = initialState.gameInfo.players(1)._1
+    val thirdPlayerID = initialState.gameInfo.players(2)._1
+    val currentBetAmount = init.getCallAmount()
+    val player1Talked =
+      sm.transition(init)(firstPlayerID, Event.Bet(initialState.gameInfo.players.find(p => p._1 == firstPlayerID).get._2)).get(0) match
+        case Action.Render(st) => st
+        case _ => throw new IllegalStateException("Unexpected action type, expected Render")
+    val player1And2havetalked =
+      sm.transition(player1Talked)(secondPlayerID, Event.Bet(initialState.gameInfo.players.find(p => p._1 == secondPlayerID).get._2)).get(0) match
+        case Action.Render(st) => st
+        case _ => throw new IllegalStateException("Unexpected action type, expected Render")
+    assert(sm.transition(player1And2havetalked)(thirdPlayerID, Event.Bet(initialState.gameInfo.players.find(p => p._1 == thirdPlayerID).get._2)).get.size == 3)
+  }
+
