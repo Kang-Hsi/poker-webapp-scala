@@ -49,11 +49,14 @@ extension (state: State)
     *   state with players turn rotated.
     */
   def rotatePlayerTurn(): State =
-    val newRotatedState = state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
-    if !newRotatedState.gameInfo.players.head.isOnlyPlaying() then
-      newRotatedState.rotatePlayerTurn()
-    else
-      newRotatedState
+    if state.gameInfo.players.count(player => player.isOnlyPlaying()) <= 1 && hasEveryoneTalked then 
+      state else
+      val newRotatedState = state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
+      
+      if !newRotatedState.gameInfo.players.head.isOnlyPlaying() then
+        newRotatedState.rotatePlayerTurn()
+      else
+        newRotatedState
 
   /** Returns state with the role of the players rotated. This function is
     * implemented in a "hard way". Since we have to assume it could be called
@@ -151,6 +154,7 @@ extension (state: State)
 
     if userIndex != 0 then throw IllegalMoveException("please wait your turn")
 
+    println("DEBUG: Player doing action: " + player)
     event match
       case Event.Fold() =>
         val allPlaying = state.gameInfo.getAllPlayingPlayers
@@ -185,9 +189,12 @@ extension (state: State)
 
         println("DEBUG: " + user + " callAmount = " + callAmount)
         println("DEBUG: " + user + " old bet amount " + player.getBetAmount() + " and new bet amount: " + totalBet)
-
+        println("DEBUG: Bet amount is : " + amount)
         // player is calling
         if totalBet == callAmount then
+          if player.getMoney() == amount then
+            println("PLAYER ALL IN JSEHFJHSLDJFKLJSDF")
+            state.applyAllIn(user, userIndex, amount, false) else
           state.applyBet(user, userIndex, amount, Status.Playing, false)
         else if totalBet < callAmount then
           // player is calling but does not have enough money => all-in
@@ -281,13 +288,17 @@ extension (state: State)
         if playerIsRaising then state.withNoPlayersTalked().addLog(user + " is raising by " + (state.gameInfo.players(userIndex).getBetAmount() - oldCheckAmount) + "$")
         else state.addLog(user + " called") 
 
-    state
+    val stateUpdated = state
       .withPlayerUpdateMoney(userIndex, -amount)
       .withPlayerUpdateBet(userIndex, amount)
       .withPlayerUpdateStatus(userIndex, newStatus)
       .resetOrNotTheTalked()
       .withPlayerHasTalked(userIndex, true)
       .rotatePlayerTurn()
+
+    println("DEBUG: DONE ")
+
+    stateUpdated
 
   /** Returns state with all in (bet) event applied.
     *

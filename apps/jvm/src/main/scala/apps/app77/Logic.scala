@@ -8,8 +8,8 @@ class Logic extends StateMachine[Event, State, View]:
 
   val appInfo: AppInfo = AppInfo(
     id = "app77",
-    name = "TBD",
-    description = "TBD",
+    name = "♤ ♡ Poker ♧ ♢",
+    description = "Standard game of texas hold'em poker. (slightly modified)",
     year = 2024
   )
 
@@ -22,23 +22,17 @@ class Logic extends StateMachine[Event, State, View]:
       deck = Nil,
       gameConfig = initGameConfig()
     ).transitionRound()
-    // transitionState
 
   override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] =
-    // the transitions returns a seq of action of states,
-    // but we only need to display one state always , except when we transitiona round.
-    // Or maybe also when we transition phase? Could be done, but for now no.
-    //
     Try({
 
       val stateWithActionNaive = state.applyEventNaive(userId, event)
 
-      // TODO need to verify if only one player in the thing or none
-      // So that we skip to the river
-      // here is the first  test for this:
+    
 
       println("DEBUG: hasEveryoneTalked: " + stateWithActionNaive.hasEveryoneTalked)
       println("DEBUG: hasEveryoneBettedSameAmount: " + stateWithActionNaive.hasEveryoneBettedSameAmount)
+
       if stateWithActionNaive.gameInfo.getAllPlayingPlayers.length == 1
       then
 
@@ -48,8 +42,8 @@ class Logic extends StateMachine[Event, State, View]:
         val nbToSkip = 4 - stateWithActionNaive.gamePhase.ordinal 
 
         renderTheStates(
-          transitionPhaseNTimes(Seq(stateWithActionNaive),nbToSkip)
-        ) // TODO verify that the goToEndRoudn satifies all ; i did not checked
+          transitionPhaseNTimes(Seq(stateWithActionNaive), nbToSkip)
+        ) 
       else if stateWithActionNaive.hasEveryoneTalked &&
         stateWithActionNaive.hasEveryoneBettedSameAmount
       then
@@ -66,8 +60,6 @@ class Logic extends StateMachine[Event, State, View]:
         renderTheStates(states)
       else
         println("DEBUG : Transitionning simple event")
-
-        // the only thing left is to rotate the players turn ig
 
         renderTheStates(Seq(stateWithActionNaive))
     })
@@ -92,10 +84,17 @@ class Logic extends StateMachine[Event, State, View]:
   /** Transform a sequence of states in a sequence of actions. If the number of
     * states in a sequence is two, it will add a pause
     */
+
+  /**
+    * Returns a sequence of actions given a sequence of states.
+    *
+    * @param statesToRender a sequence of states.
+    * @return a sequence of actions.
+    */
   private def renderTheStates(statesToRender: Seq[State]): Seq[Action[State]] =
     val renderStates = statesToRender.map(s => Action.Render(s))
     if renderStates.length == 2 then
-      Seq(renderStates(0), Action.Pause(100), renderStates(1))
+      Seq(renderStates(0), Action.Pause(1000), renderStates(1))
     else renderStates
     
   private def transitionPhaseNTimes(state: Seq[State], times : Int):Seq[State]=
