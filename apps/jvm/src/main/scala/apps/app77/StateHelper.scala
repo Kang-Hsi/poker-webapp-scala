@@ -299,6 +299,7 @@ extension (state: State)
     val stateUpdated = state
       .withPlayerUpdateMoney(userIndex, -amount)
       .withPlayerUpdateBet(userIndex, amount)
+      .withPlayerUpdatePotContribution(userIndex, amount)
       .withPlayerUpdateStatus(userIndex, newStatus)
       .resetOrNotTheTalked()
       .addLogIsAllIn()
@@ -343,7 +344,43 @@ extension (state: State)
     val gameInfoUpdated = state.gameInfo.copy(players = playersNoTalked)
 
 
+  /** Returns state with all players with 0 pot contribution
+   * @retun
+   *  state with all players with 0 pot cntribution
+   */
+
+  def withNoBetContributionPlayers(): State=
+    val players = state.gameInfo.players
+    val playersNoContrib = players.map(_.withPotContribution(0))
+    val gameInfoUpdated = state.gameInfo.copy(players = playersNoContrib)
+
+
+    
+
+
     state.copy(gameInfo = gameInfoUpdated)
+
+  /** Returns state with a player's pot contribution updated.
+    *
+    * @param userIndex
+    *   a user index.
+    * @param potContributionToAddOrSub
+    *   a pot contribution to add to the player's pot contribution
+    * @return
+    *   state with a player's pot contribution updated.
+    */
+  def withPlayerUpdatePotContribution(userIndex: Int, potContributionToAddOrSub: Money): State =
+    val players = state.gameInfo.players
+    val playersWithIndex = players.zipWithIndex
+
+    val playersUpdated = playersWithIndex.map((player, index) =>
+      if index == userIndex then player.updatePotContribution(potContributionToAddOrSub) else player
+    )
+
+    val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
+
+    state.copy(gameInfo = gameInfoUpdated)
+  
 
   /** Returns state with a player's status updated.
     *
@@ -365,7 +402,7 @@ extension (state: State)
     val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
 
     state.copy(gameInfo = gameInfoUpdated)
-
+  
   /** Returns state with a player's bet amount updated.
     *
     * @param userIndex
@@ -603,6 +640,8 @@ extension (state: State)
         .nextPhase()
         .setStatus()
         .rotatePlayerRole()
+        .withNoBetContributionPlayers()
+        .withNoPlayersTalked() //this might be useless, but still we never know
         .setBeginOfRoundOrder()
         .populateShuffledDeck()
         .distributeCards()
@@ -659,11 +698,11 @@ extension (state: State)
       player.getRole() match
         case SmallBlind =>
           if player.getMoney() < smallBlind then player.withStatus(Status.Spectating) else
-            player.updateBetAmount(smallBlind).updateMoney(-smallBlind)
+            player.updateBetAmount(smallBlind).updateMoney(-smallBlind).updatePotContribution(smallBlind)
 
         case BigBlind => 
           if player.getMoney() < bigBlind then player.withStatus(Status.Spectating) else 
-            player.updateBetAmount(bigBlind).updateMoney(-bigBlind)
+            player.updateBetAmount(bigBlind).updateMoney(-bigBlind).updatePotContribution(bigBlind)
 
         case _ => player
       )
