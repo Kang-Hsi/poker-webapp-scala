@@ -1003,3 +1003,36 @@ extension (gameInfo: GameInfo)
           newGameInfo.distributePotInternal(
             playingPlayersWithoutLastWinner
           )
+
+
+  def distribPot2(winnersExcluded: List[UserId]):State=
+    val allPlayers = gameInfo.players
+      .filter(p => !winnersExcluded.contains(p))
+
+    val communalCards = gameInfo.communalCards
+
+    val winners = CardHelper.findWinner(allPlayers, communalCards)
+
+    assert(winners.length >= 0, "No winner ??")
+
+    val pot = gameInfo.pot
+
+    val winnersWithAmountTheyCanWinPerPot =
+      winners.map(w =>
+          (w,w.getPotContribution()/winners.length)
+          ).sortBy((a,potContr) => potContr)
+
+    val pots = allPlayers.map(p=>p.getPotContribution())
+
+
+    val winnerWeService = winners.head
+
+    val allTruePlayers = gameInfo.players 
+
+    val newGameInfo =
+
+
+
+
+    
+
