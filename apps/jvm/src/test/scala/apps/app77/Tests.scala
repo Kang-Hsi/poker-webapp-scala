@@ -9,12 +9,6 @@ class Tests extends WebappSuite[Event, State, View]:
 
   // The specific state machine for your application needs to be provided here
 
-  def provideSampleEvent(): Event = ???
-
-  def provideSampleState(): View = ???
-
-  def provideBadEvent(): Event = ???
-
   val sm = Logic()
   val wire = sm.wire
 
@@ -150,26 +144,37 @@ class Tests extends WebappSuite[Event, State, View]:
   }
 
 
+  test("the first players has talked") {
+    val users = USER_IDS
+    val init = initialState
+    val currentplayerID = initialState.gameInfo.players(0)._1
+    val currentBetAmount = init.getCallAmount()
+    val player1Talked = sm.transition(init)(initialState.gameInfo.players(0)._1, Event.Bet(currentBetAmount)).get(0) match
+      case Action.Render(st) => st
+      case _ => throw new IllegalStateException("Unexpected action type, expected Render")
 
-/*
-  /** Example test for initial state of the application */
-  test("Initial state validation") {
-    assert(initialState.isInstanceOf[State], "Initial state should be a valid State instance")
+    assert(player1Talked.gameInfo.players.find(p => p._1 == currentplayerID).get._7)
   }
 
-  /** Test for typical user interaction */
-  test("User interaction test") {
-    val event = provideSampleEvent()
-    val resultingActions = sm.transition(initialState)(UID0, event)
-    assertSingleRender(resultingActions)
-  }
+  test("betting more then the current Bet Amount set the status to other player to : not haveTalked") {
+    val users = USER_IDS
+    val init = initialState
+    val firstPlayerID = initialState.gameInfo.players(0)._1
+    val secondPlayerID = initialState.gameInfo.players(1)._1
+    val thirdPlayerID = initialState.gameInfo.players(2)._1
+    val currentBetAmount = init.getCallAmount()
+    val player1Talked =
+      sm.transition(init)(firstPlayerID, Event.Bet(currentBetAmount - initialState.gameInfo.players(0)._6)).get(0) match
+        case Action.Render(st) => st
+        case _ => throw new IllegalStateException("Unexpected action type, expected Render")
+    val player1And2havetalked =
+      sm.transition(player1Talked)(secondPlayerID, Event.Bet(currentBetAmount - initialState.gameInfo.players(1)._6)).get(0) match
+        case Action.Render(st) => st
+        case _ => throw new IllegalStateException("Unexpected action type, expected Render")
+    assert(player1And2havetalked.gameInfo.players.filter(p => p._7).size == 2)
+    val thirdPlayerBetMore = sm.transition(player1And2havetalked)(thirdPlayerID, Event.Bet(10 + currentBetAmount - initialState.gameInfo.players(2)._6)).get(0) match
+      case Action.Render(st) => st
+      case _ => throw new IllegalStateException("Unexpected action type, expected Render")
+    assert(thirdPlayerBetMore.gameInfo.players.find(p => p._7).size == 1)
 
-  /** Test handling of invalid or exceptional cases */
-  test("Exception handling") {
-    val badEvent = provideBadEvent()
-    assertFailure[Exception](sm.transition(initialState)(UID0, badEvent))
   }
-*/
-
-  /** Further tests for specific scenarios within your application */
-  // TODO: Implement more specific tests based on actual application behavior
