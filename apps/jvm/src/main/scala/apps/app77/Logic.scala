@@ -33,7 +33,7 @@ class Logic extends StateMachine[Event, State, View]:
       println("DEBUG: hasEveryoneTalked: " + stateWithActionNaive.hasEveryoneTalked)
       println("DEBUG: hasEveryoneBettedSameAmount: " + stateWithActionNaive.hasEveryoneBettedSameAmount)
 
-      if stateWithActionNaive.gameInfo.getAllPlayingPlayers.length == 1
+      if stateWithActionNaive.gameInfo.getOnlyAllPlayingPlayers.length == 1
       then
 
         println("INFO : We are skipping to endRound because only one player is left")

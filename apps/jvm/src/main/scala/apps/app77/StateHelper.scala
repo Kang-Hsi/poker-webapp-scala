@@ -52,7 +52,7 @@ extension (state: State)
     if state.gameInfo.players.count(player => player.isOnlyPlaying()) <= 1 && hasEveryoneTalked then 
       state else
       val newRotatedState = state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
-      
+      print("boucle") 
       if !newRotatedState.gameInfo.players.head.isOnlyPlaying() then
         newRotatedState.rotatePlayerTurn()
       else
@@ -288,11 +288,18 @@ extension (state: State)
         if playerIsRaising then state.withNoPlayersTalked().addLog(user + " is raising by " + (state.gameInfo.players(userIndex).getBetAmount() - oldCheckAmount) + "$")
         else state.addLog(user + " called") 
 
+      def addLogIsAllIn()=
+        if newStatus == Status.AllIn then
+          state.addLog("And " + user + " is all'd in!")
+        else
+          state
+
     val stateUpdated = state
       .withPlayerUpdateMoney(userIndex, -amount)
       .withPlayerUpdateBet(userIndex, amount)
       .withPlayerUpdateStatus(userIndex, newStatus)
       .resetOrNotTheTalked()
+      .addLogIsAllIn()
       .withPlayerHasTalked(userIndex, true)
       .rotatePlayerTurn()
 
@@ -758,6 +765,10 @@ extension (gameInfo: GameInfo)
     */
   def getAllPlayingPlayers: List[PlayerInfo] =
     gameInfo.players.filter(player => player.isPlaying())
+
+  def getOnlyAllPlayingPlayers: List[PlayerInfo] = 
+    gameInfo.players.filter(player => player.isOnlyPlaying())
+
 
   /** Returns gameInfo with players turn rotated.
     *
