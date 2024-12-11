@@ -84,26 +84,24 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
 
       // button fold
       button(
-        cls := s"action-button-fold ${if (getclient(view)._4 == Status.Spectating) "action-button-disabled" else ""}",
+        cls := s"action-button-fold ${if (getclient(view)._1 != view.gameInfo.players(0)._1 || getclient(view)._4 == Status.Spectating || getclient(view)._4 == Status.AllIn) "action-button-disabled" else ""}",
         onclick := { () =>
-          if (getclient(view)._4 != Status.Spectating) sendEvent(Event.Fold())
+          sendEvent(Event.Fold())
         },
         "Fold"
       ),
 
       // button call
       button(
-        cls := s"action-button-call ${if (getclient(view)._4 == Status.Spectating) "action-button-disabled" else ""}",
+        cls := s"action-button-call ${if (getclient(view)._1 != view.gameInfo.players(0)._1 || getclient(view)._4 == Status.Spectating || getclient(view)._4 == Status.AllIn) "action-button-disabled" else ""}",
         onclick := { () =>
-          if (getclient(view)._4 != Status.Spectating) {
-            if (getcallAmount(view) == getclient(view)._6) {
-              sendEvent(Event.Check())
-            } else {
-              val callAmount = getcallAmount(view)
-              val client = getclient(view)
-              val amountToBet = math.min(client._2, callAmount - client._6)
-              sendEvent(Event.Bet(amountToBet))
-            }
+          if (getcallAmount(view) == getclient(view)._6) {
+            sendEvent(Event.Check())
+          } else {
+            val callAmount = getcallAmount(view)
+            val client = getclient(view)
+            val amountToBet = math.min(client._2, callAmount - client._6)
+            sendEvent(Event.Bet(amountToBet))
           }
         },
         callButtonText(view)
@@ -120,18 +118,17 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
           cls := "raise-input"
         ),
         button(
-          cls := s"action-button-raise ${if (getclient(view)._4 == Status.Spectating) "action-button-disabled" else ""}",
+          cls := s"action-button-raise ${if (getclient(view)._1 != view.gameInfo.players(0)._1 || getclient(view)._4 == Status.Spectating || getclient(view)._4 == Status.AllIn) "action-button-disabled" else ""}",
           onclick := { () =>
-            if (getclient(view)._4 != Status.Spectating) {
-              val inputElement = dom.document
-                .getElementById("raise-input")
-                .asInstanceOf[HTMLInputElement]
-              val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
-              // Vérifie si la valeur est inférieure au minimum
-              val correctedAmount = math.max(raiseAmount, getcallAmount(view))
-              sendEvent(Event.Bet(correctedAmount))
-            }
-          },
+            val inputElement = dom.document
+              .getElementById("raise-input")
+              .asInstanceOf[HTMLInputElement]
+            val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
+            // Vérifie si la valeur est inférieure au minimum
+            val correctedAmount = math.max(raiseAmount, getcallAmount(view))
+            sendEvent(Event.Bet(correctedAmount))
+          }
+          ,
           "Raise"
         )
       )
@@ -164,9 +161,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     val myCards = getclient(view)._5.get.map(card => (card._1,card._3)).toList
     val myMoney = getclient(view)._2
     val playersHandBalance = div(
-      cls := "toDo",
       table(
-        cls := "a-faire",
         tr(
           th(cls := "tableHeader", "My hand"),
           th(cls := "tableHeader", "My money"),
@@ -246,12 +241,12 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
   }
   // Définir le CSS pour styliser l'interface
   override def css: String = super.css + """
+    |
     | .poker-ui {
     |   font-family: Arial, sans-serif;
-    |   margin: auto;
     |   padding: 20px;
-    |   border: 1px solid #ccc;
-    |   border-radius: 5px;
+    |   border: 3px solid #ccc;
+    |   border-radius: 2px;
     |   max-width: 200%;
     |   text-align: center;
     |   justify-content: center;
@@ -261,9 +256,9 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   font-family: Arial, sans-serif;
     |   margin: auto;
     |   padding: 20px;
-    |   border: 6px solid #ccc;
+    |   border: 3px solid #ccc;
     |   border-color: #42eb05;
-    |   border-radius: 5px;
+    |   border-radius: 2px;
     |   max-width: 200%;
     |   text-align: center;
     |   justify-content: center;
@@ -274,6 +269,11 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   font-weight: bold;
     |   margin-bottom: 20px;
     | }
+    |
+    | .roles-table-container {
+    |   overflow-x: auto; /* Permet le défilement horizontal si nécessaire */
+    | }
+    |
     |
     | .roles-table {
     |   margin: 20px auto;
@@ -302,9 +302,6 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   max-width: none; /* Supprime les limites de largeur */
     | }
     |
-    | .roles-table-container {
-    |   overflow-x: auto; /* Permet le défilement horizontal si nécessaire */
-    | }
     | .folded-player {
     |   opacity: 0.5; /* Réduit l'opacité pour griser */
     |   color: #888; /* Change la couleur du texte */
@@ -316,38 +313,6 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   height: 50px;
     |   margin-left: 5px;
     |   vertical-align: middle;
-    | }
-    | .handTable td, .communalTable td {
-    |   text-align: center;
-    |   border = none;
-    | }
-    | .card-black {
-    |  text-align: center; /* Centrer le contenu */
-    |  display: inline-block; /* Assure un alignement horizontal */
-    |  padding: 10px; /* Ajouter un espacement interne */
-    |  font-size: 8em; /* Agrandir les cartes */
-    |  color: #ffffff;
-    | }
-    | .card-red {
-    |  text-align: center; /* Centrer le contenu */
-    |  display: inline-block; /* Assure un alignement horizontal */
-    |  padding: 10px; /* Ajouter un espacement interne */
-    |  font-size: 8em; /* Agrandir les cartes */
-    |  color: #ff0000;
-    | }
-    |
-    | .cardHand-black{
-    |  text-align: center; /* Centrer le contenu */
-    |  display: inline-block; /* Assure un alignement horizontal */
-    |  padding: 10px; /* Ajouter un espacement interne */
-    |  font-size: 6.5em; /* Agrandir les cartes */
-    | }
-    | .cardHand-red{
-    |  text-align: center; /* Centrer le contenu */
-    |  display: inline-block; /* Assure un alignement horizontal */
-    |  padding: 10px; /* Ajouter un espacement interne */
-    |  font-size: 6.5em; /* Agrandir les cartes */
-    |   color: #ff0000;
     | }
     |
     | .actions {
@@ -394,6 +359,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |  pointer-events: none; /* Empêche tout clic ou interaction */
     |  cursor: not-allowed; /* Indique visuellement que le bouton est désactivé */
     | }
+    |
     | .communal-card-pot {
     |   padding: 20px;
     |   background-image: url('/static/table.jpg'); /* Chemin vers votre image */
@@ -424,6 +390,44 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   background-color: #f2f2f2;
     | }
     |
+    |
+    | .handTable td {
+    |  width: auto; /* Laisser les cartes ajuster leur propre largeur */
+    | }
+    |
+    | .handTable td, .communalTable td {
+    |   text-align: center;
+    |   border = none;
+    | }
+    | .card-black {
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 8em; /* Agrandir les cartes */
+    |  color: #000000;
+    | }
+    | .card-red {
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 8em; /* Agrandir les cartes */
+    |  color: #ff0000;
+    | }
+    |
+    | .cardHand-black{
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 6.5em; /* Agrandir les cartes */
+    | }
+    | .cardHand-red{
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 6.5em; /* Agrandir les cartes */
+    |   color: #ff0000;
+    | }
+    |
     | .potColumn {
     |   width: 40%; /* Largeur définie par vous */
     |   text-align: center; /* Centrer le texte */
@@ -450,11 +454,6 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   width: 150px; /* Augmente la taille de l'image */
     |   height: 150px;
     |   object-fit: contain; /* Conserve les proportions de l'image */
-    | }
-    |
-    | .handTable td {
-    |  text-align: center;
-    |  width: auto; /* Laisser les cartes ajuster leur propre largeur */
     | }
     |
     | .logs {
