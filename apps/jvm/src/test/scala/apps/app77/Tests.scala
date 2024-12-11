@@ -49,6 +49,43 @@ class Tests extends WebappSuite[Event, State, View]:
   def createUserIds(numPlayers: Int, prefix: String = "Player"): List[UserId] =
       List.tabulate(numPlayers)(i => s"$prefix$i")
 
+  def createRandomPlayerInfo(playerIds: Seq[UserId])(using config : Configuration) : List[PlayerInfo] =
+        playerIds.zipWithIndex.map { case (userId, index) =>
+            val role = index match {
+            case 0 => Role.Dealer
+            case 1 => Role.SmallBlind
+            case 2 => Role.BigBlind
+            case _ => Role.Normal
+            }
+            val money = index match
+              case 0 => 50
+              case 1 => 30
+              case 2 => config.getInitialMoney * 3 - 50 - 30
+            (userId, config.getInitialMoney, role, Status.Playing, None: Option[PlayerHand], 0, false, 0)
+        }.toList
+
+  def createRandomGameInfo(players: List[PlayerInfo])(using config : Configuration): GameInfo =
+      GameInfo(
+          players = createRandomPlayerInfo(USER_IDS),
+          roundNumber = 3,
+          communalCards = List.empty,
+          pot = 0,
+          logs = List("Game initialized"),
+          callAmount = 0,
+          minRaise = 0,
+          maxRaise = 0
+      )
+
+  def createRandomState(playerIds: Seq[UserId])(using config : Configuration): State =
+      val playersInfo = createRandomPlayerInfo(playerIds)
+      val gameInfo = createRandomGameInfo(playersInfo)
+      val shuffledDeck = allCards.shuffle()
+      State(
+          gamePhase = GamePhase.PreFlop,
+          gameInfo = gameInfo,
+          deck = shuffledDeck,
+          gameConfig = GameConfig(config.getMaxRound, config.getSmallBlind, config.getBigBlind))
+
 
   // Define some typical user scenarios and the initialization of state
   lazy val initialState: State = sm.init(USER_IDS)
@@ -195,5 +232,15 @@ class Tests extends WebappSuite[Event, State, View]:
         case Action.Render(st) => st
         case _ => throw new IllegalStateException("Unexpected action type, expected Render")
     assert(sm.transition(player1And2havetalked)(thirdPlayerID, Event.Bet(initialState.gameInfo.players.find(p => p._1 == thirdPlayerID).get._2)).get.size == 3)
+  }
+
+  test("if someone goes AllIn his status should be AllIn after") {
+    val state = createRandomState(USER_IDS)
+    val playerID = state.gameInfo.players(0).getUserId()
+    val money = state.gameInfo.players(0).getMoney()
+    val player1GoesAllIn = sm.transition(state)(playerID, Event.Bet(money)).get(0) match
+        case Action.Render(st) => st
+        case _ => throw new IllegalStateException("Unexpected action type, expected Render")
+    assert(player1GoesAllIn.gameInfo.players.find(p => p._1 == playerID).get._4 == Status.AllIn)
   }
 
