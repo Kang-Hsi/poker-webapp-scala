@@ -39,12 +39,12 @@ object CardHelper:
     *
     * @return the winner(s) of a poker round.
     */
-  def findWinner(players: List[PlayerInfo], communalCards: List[Card]): List[PlayerInfo] =
+  def findWinner(players: List[PlayerInfo], communalCards: List[Card]): List[(PlayerInfo, Option[HandRank])] = 
     val playersPlaying = players.filter(_.isPlaying())
 
     if playersPlaying.length == 1 then
-      playersPlaying
-    else
+      (playersPlaying.map(p => (p,None)))
+    else 
 
       val allHands: List[(UserId, PlayerHand)] = playersPlaying.flatMap { player =>
         player.getHand().map(hand => (player.getUserId(), hand))
@@ -63,9 +63,11 @@ object CardHelper:
       val winnerUserIds = rankings.filter((_, handRank) => handRank == highestRank).map((userId, handRank) => userId)
 
       val winners = playersPlaying.filter(player => winnerUserIds.contains(player.getUserId()))
+      
+      val winnersWithHand = winners.map(w => (w, Some(rankings.find((u,h) => u == w.getUserId()).get._2)))
 
-      winners
-
+      winnersWithHand
+    
 
   extension(deck: Deck)
 
