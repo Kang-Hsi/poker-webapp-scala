@@ -49,6 +49,7 @@ extension (state: State)
     *   state with players turn rotated.
     */
   def rotatePlayerTurn(): State =
+
     if (state.gameInfo.players.count(player => player.isOnlyPlaying()) <= 1 && hasEveryoneTalked) || state.gameInfo.players.filter(_.getStatus() != Status.Spectating).forall(_.isOnlyAllIn()) then 
       println("DEBUG: ROTATING PLAYERS")
       state else
@@ -71,6 +72,7 @@ extension (state: State)
     *   state with players roles rotated.
     */
   def rotatePlayerRole(): State =
+    println("DEBUG: RotatePlayerRoles gamePhase is " + state.gamePhase )
     state.copy(gameInfo = state.gameInfo.rotatePlayerRolesInternal())
 
   /** Returns state with the order of the round set. PreFlop: Player after big
@@ -645,9 +647,9 @@ extension (state: State)
     else
       state
         .increaseRoundNumber()
-        .nextPhase()
         .setStatus()
         .rotatePlayerRole()
+        .nextPhase()
         .withNoBetContributionPlayers()
         .withNoPlayersTalked() //this might be useless, but still we never know
         .setBeginOfRoundOrder()
@@ -835,6 +837,7 @@ extension (gameInfo: GameInfo)
 
     println("DEBUG: rotatePlayerRoles before players: " + players)
 
+    
     require(players.size >= 3)
     val playersWithIndex = players.zipWithIndex
 
@@ -889,8 +892,8 @@ extension (gameInfo: GameInfo)
     state.gamePhase match
       case PreFlop =>
         gameInfo.copy(players =
-          players.drop(bigBlindPosition + 1) ++ players.take(
-            bigBlindPosition + 1
+          players.drop((bigBlindPosition + 1) % players.size) ++ players.take(
+            (bigBlindPosition + 1) % players.size
           )
         )
 
@@ -988,7 +991,7 @@ extension (gameInfo: GameInfo)
     })
 
     gameInfo.copy(
-      logs = winningLogs ++ gameInfo.logs     
+      logs = gameInfo.logs ++ winningLogs
       )
 
 
