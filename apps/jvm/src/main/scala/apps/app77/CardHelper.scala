@@ -22,7 +22,7 @@ object CardHelper:
 )
 
   /**
-   * The basic ordered deck of cards. 
+   * The basic ordered deck of cards.
    * From 2 to Ace (14).
    */
   val allCards: Deck =
@@ -32,19 +32,19 @@ object CardHelper:
       number <- 2 to 14
     yield
       (suit, number, representation.next())
-    ).toList
+    ).toList.ensuring(l => l.size == 52)
 
 
   /** Find the winner(s) of a poker round from a list of PlayerInfo.
     *
-    * @return the winner(s) of a poker round. 
+    * @return the winner(s) of a poker round.
     */
-  def findWinner(players: List[PlayerInfo], communalCards: List[Card]): List[PlayerInfo] = 
+  def findWinner(players: List[PlayerInfo], communalCards: List[Card]): List[PlayerInfo] =
     val playersPlaying = players.filter(_.isPlaying())
 
     if playersPlaying.length == 1 then
       playersPlaying
-    else 
+    else
 
       val allHands: List[(UserId, PlayerHand)] = playersPlaying.flatMap { player =>
         player.getHand().map(hand => (player.getUserId(), hand))
@@ -53,19 +53,19 @@ object CardHelper:
       val allHandsWithCommunalCards = allHands.map((userId, hand) => (userId, (hand ++ communalCards)))
 
       val rankings: List[(UserId, HandRank)] = allHandsWithCommunalCards.map((userId, cards) =>
-        (userId, HandRank.evaluateHand(cards.toList)) 
+        (userId, HandRank.evaluateHand(cards.toList))
       )
 
       println("DEBUG: RANKINGS " + rankings)
       val highestRank = rankings.map((_, handRank) => handRank).max
 
-  
+
       val winnerUserIds = rankings.filter((_, handRank) => handRank == highestRank).map((userId, handRank) => userId)
 
       val winners = playersPlaying.filter(player => winnerUserIds.contains(player.getUserId()))
 
       winners
-    
+
 
   extension(deck: Deck)
 

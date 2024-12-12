@@ -908,12 +908,12 @@ extension (gameInfo: GameInfo)
           players.drop((bigBlindPosition + 1) % players.size) ++ players.take(
             (bigBlindPosition + 1) % players.size
           )
-        )
+        ).ensuring(g => g.players.size == players.size, "Preflop | EndRound should not drop any players")
 
       case Flop | Turn | River  =>
         gameInfo.copy(players =
           players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
-        )
+        ).ensuring(g => g.players.size == players.size, "Flop | Turn |River should not drop any players")
 
       case EndGame =>
         throw Exception(
