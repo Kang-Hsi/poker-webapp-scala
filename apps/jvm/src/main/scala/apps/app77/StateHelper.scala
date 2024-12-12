@@ -575,7 +575,7 @@ extension (state: State)
     */
   def goToFlop(): State =
     println("DEBUG: GOING TO FLOP")
-    state.addCommunal(3).cleanupNextPhase().nextPhase()
+    state.addCommunal(3).nextPhase().cleanupNextPhase()
 
   /** Returns turn state.
     *
@@ -584,7 +584,7 @@ extension (state: State)
     */
   def goToTurn(): State =
     println("DEBUG: GOING TO TURN")
-    state.addCommunal(4).cleanupNextPhase().nextPhase()
+    state.addCommunal(4).nextPhase().cleanupNextPhase()
 
   /** Returns river state.
     *
@@ -593,7 +593,7 @@ extension (state: State)
     */
   def goToRiver(): State =
     println("DEBUG: GOING TO RIVER")
-    state.addCommunal(5).cleanupNextPhase().nextPhase()
+    state.addCommunal(5).nextPhase().cleanupNextPhase()
 
   /** Returns state cleaned up.
     *
@@ -649,10 +649,10 @@ extension (state: State)
         .increaseRoundNumber()
         .setStatus()
         .rotatePlayerRole()
+        .setBeginOfRoundOrder()
         .nextPhase()
         .withNoBetContributionPlayers()
         .withNoPlayersTalked() //this might be useless, but still we never know
-        .setBeginOfRoundOrder()
         .populateShuffledDeck()
         .distributeCards()
         .resetFlop()
@@ -890,21 +890,21 @@ extension (gameInfo: GameInfo)
     assert(bigBlindPosition >= 0, "No Big Blind?!")
 
     state.gamePhase match
-      case PreFlop =>
+      case PreFlop | EndRound =>
         gameInfo.copy(players =
           players.drop((bigBlindPosition + 1) % players.size) ++ players.take(
             (bigBlindPosition + 1) % players.size
           )
         )
 
-      case Flop | Turn | River =>
+      case Flop | Turn | River  =>
         gameInfo.copy(players =
           players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
         )
 
-      case EndRound | EndGame =>
+      case EndGame =>
         throw Exception(
-          "no order needed for endRound/endGame"
+          "no order needed for endGame"
         ) // should never happen
 
 
