@@ -18,10 +18,9 @@ object TextUI extends WSClientApp:
   def uiId: String =  "html"
 
   def init(userId: UserId, sendMessage: ujson.Value => Unit, target: Target): ClientAppInstance =
-    val _ = println("textUIInstance instancieted ...")
-    TextUIInstance(userId, sendMessage, target)
+    UIInstance(userId, sendMessage, target)
 
-class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Target)
+class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Target)
     extends graphics.WebClientAppInstance[Event, View](userId, sendMessage, target) {
 
    // Définit le Wire utilisé pour les interactions
@@ -32,16 +31,12 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     // Header de la page
     val header = div(
       cls := "header",
-      h1("Poker Game")
+      div(cls := "layer", "Poker Game"),
+      div(cls := "layer", "Poker Game")
     )
 
     // Les descriptions des lignes
     val headers = List("Role", "Name","Money", "Bet Amount")
-    // Tableau des joueurs et leurs rôles
-    // TODO erreurs : Le sablier n'est pas sur la bonne personne (le sablier est sur la personne qui regarde le site a chaque fois)
-    //                La liste ne doit pas etre dans le meme ordre que celle que vous revevez (car l'odre change a chaque tour)
-    //                Il faut que vou créer une nouvelle liste ordonnée avec Dealer, Sb, Bb, et le rest (ordonné par ordre de jeu de passage de base)
-    //  - il faudrait mettre une ligne betAmount (pourr voir le bet de chaque joueur
     val currentplayer = view.gameInfo.players(0)._1
     val orderedListPlayers = view.gameInfo.players.sortBy(p => p._3)
     val rolesTableContainer = div(
@@ -75,35 +70,29 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
         )
     )
 
-    // Actions disponibles pour le joueur
-    // TODO A changer : le boutton call doit montrer l'argent qu'il faut payer pour call (attention a ne pas utiliser State.callAmount car ca ne marche pas, il faut utiliser la state.getCallAmount codée dans logique (copiez la fonction et adaptez la pour la view), 
-    // Donc si la personne doit call, le boutton doit envoyer un BetEvent (comme convenu lundi dernier)
-    // Sinon si le betAmount de al personne == callAmount, le boutton change en Check et l'on envois un checkEvent
     val actions = div(
       cls := "actions",
 
       // button fold
       button(
-        cls := s"action-button-fold ${if (getclient(view)._4 == Status.Spectating) "action-button-disabled" else ""}",
+        cls := s"action-button-fold ${if (getclient(view)._1 != view.gameInfo.players(0)._1 || getclient(view)._4 == Status.Spectating || getclient(view)._4 == Status.AllIn) "action-button-disabled" else ""}",
         onclick := { () =>
-          if (getclient(view)._4 != Status.Spectating) sendEvent(Event.Fold())
+          sendEvent(Event.Fold())
         },
         "Fold"
       ),
 
       // button call
       button(
-        cls := s"action-button-call ${if (getclient(view)._4 == Status.Spectating) "action-button-disabled" else ""}",
+        cls := s"action-button-call ${if (getclient(view)._1 != view.gameInfo.players(0)._1 || getclient(view)._4 == Status.Spectating || getclient(view)._4 == Status.AllIn) "action-button-disabled" else ""}",
         onclick := { () =>
-          if (getclient(view)._4 != Status.Spectating) {
-            if (getcallAmount(view) == getclient(view)._6) {
-              sendEvent(Event.Check())
-            } else {
-              val callAmount = getcallAmount(view)
-              val client = getclient(view)
-              val amountToBet = math.min(client._2, callAmount - client._6)
-              sendEvent(Event.Bet(amountToBet))
-            }
+          if (getcallAmount(view) == getclient(view)._6) {
+            sendEvent(Event.Check())
+          } else {
+            val callAmount = getcallAmount(view)
+            val client = getclient(view)
+            val amountToBet = math.min(client._2, callAmount - client._6)
+            sendEvent(Event.Bet(amountToBet))
           }
         },
         callButtonText(view)
@@ -120,18 +109,17 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
           cls := "raise-input"
         ),
         button(
-          cls := s"action-button-raise ${if (getclient(view)._4 == Status.Spectating) "action-button-disabled" else ""}",
+          cls := s"action-button-raise ${if (getclient(view)._1 != view.gameInfo.players(0)._1 || getclient(view)._4 == Status.Spectating || getclient(view)._4 == Status.AllIn) "action-button-disabled" else ""}",
           onclick := { () =>
-            if (getclient(view)._4 != Status.Spectating) {
-              val inputElement = dom.document
-                .getElementById("raise-input")
-                .asInstanceOf[HTMLInputElement]
-              val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
-              // Vérifie si la valeur est inférieure au minimum
-              val correctedAmount = math.max(raiseAmount, getcallAmount(view))
-              sendEvent(Event.Bet(correctedAmount))
-            }
-          },
+            val inputElement = dom.document
+              .getElementById("raise-input")
+              .asInstanceOf[HTMLInputElement]
+            val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
+            // Vérifie si la valeur est inférieure au minimum
+            val correctedAmount = math.max(raiseAmount, getcallAmount(view))
+            sendEvent(Event.Bet(correctedAmount))
+          }
+          ,
           "Raise"
         )
       )
@@ -140,8 +128,8 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     //Comunal Card + Pot (5 cartes, parfois  certaines de dos, représenté par ?), + une colonne avec le pot
     // Récupérer les cartes communes et ajouter des cartes vides si nécessaire
     val commCards = view._1.communalCards
-    val emptyCards = List.fill(5 - commCards.size)(" ? ")
-    val cards = commCards.map(_._3) ++ emptyCards
+    val emptyCards = List.fill(5 - commCards.size)(Suit.Spades," 🂠 ")
+    val cards = commCards.map(c => (c._1, c._3)) ++ emptyCards
 
     val commCardPot = div(
       cls := "communal-card-pot",
@@ -152,7 +140,8 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
               table(
                 cls := "communalTable",
                 tr(
-                  for card <- cards yield td(cls := "card", card)
+                  for card <- cards yield td(
+                    cls := s"card ${if (card._1 == Suit.Heart|| card._1 == Suit.Diamond) "card-red" else "card-black"}", card._2)
                 )
               )
             )
@@ -160,12 +149,10 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
         )
       )
 
-    val myCards = getclient(view)._5.get.map(card => card._3).toList
+    val myCards = getclient(view)._5.get.map(card => (card._1,card._3)).toList
     val myMoney = getclient(view)._2
     val playersHandBalance = div(
-      cls := "toDo",
       table(
-        cls := "a-faire",
         tr(
           th(cls := "tableHeader", "My hand"),
           th(cls := "tableHeader", "My money"),
@@ -176,7 +163,8 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
             table(
               cls := "handTable",
               tr(
-                for card <- myCards yield td(cls := "cardHand", card)
+                for card <- myCards yield td(
+                  cls := s"${if (card._1 == Suit.Heart|| card._1 == Suit.Diamond) "cardHand-red" else "cardHand-black"}", card._2)
               )
             )
           ),
@@ -208,7 +196,7 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     // Combine tout dans une vue
     frag(
       p(
-        cls := "poker-ui",
+        cls := s"${if getclient(view)._1 == view.gameInfo.players(0)._1 then "poker-ui-clientTurn" else "poker-ui"}",
         header,
         rolesTableContainer,
         commCardPot,
@@ -244,23 +232,76 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
   }
   // Définir le CSS pour styliser l'interface
   override def css: String = super.css + """
-    | .app77 {
+    |
+    | .poker-ui {
     |   font-family: Arial, sans-serif;
-    |   margin: auto;
     |   padding: 20px;
-    |   border: 1px solid #ccc;
-    |   border-radius: 5px;
+    |   border: 3px solid #ccc;
+    |   border-radius: 2px;
     |   max-width: 200%;
     |   text-align: center;
     |   justify-content: center;
     |
     | }
-    | .header {
+    | .poker-ui-clientTurn {
+    |   font-family: Arial, sans-serif;
+    |   margin: auto;
+    |   padding: 20px;
+    |   border: 3px solid #ccc;
+    |   border-color: #42eb05;
+    |   border-radius: 2px;
+    |   max-width: 200%;
     |   text-align: center;
-    |   font-size: 2em;
-    |   font-weight: bold;
-    |   margin-bottom: 20px;
+    |   justify-content: center;
     | }
+    | .header {
+    |   --c-1: #66ff66;
+    |   --c-2: #e60000;
+    |   position: relative;
+    |   display: flex;
+    |   justify-content: center;
+    |   align-items: center;
+    | }
+    |
+    | .layer {
+    |   font-size: 25px;
+    |   font-family: "Segoe UI", Tahoma;
+    |   font-weight: 800;
+    |   text-transform: uppercase;
+    |   position: absolute;
+    | }
+    |
+    | .layer:nth-child(1) {
+    |   color: var(--c-1);
+    |   animation: kfs-3412 2.0s infinite;
+    | }
+    |
+    | .layer:nth-child(2) {
+    |   color: var(--c-2);
+    |   animation: kfs-3412 2.0s 1.0s infinite;
+    | }
+    |
+    | @keyframes kfs-3412 {
+    |   0% {
+    |     text-shadow: 0 0 30px var(--c-1);
+    |     transform: scaleY(0);
+    |     z-index: 2;
+    |   }
+    |   50% {
+    |     transform: scaleY(1.5);
+    |     z-index: 2;
+    |   }
+    |   100% {
+    |     transform: scaleY(1.5);
+    |     z-index: 0;
+    |   }
+    | }
+    |
+    |
+    | .roles-table-container {
+    |   overflow-x: auto; /* Permet le défilement horizontal si nécessaire */
+    | }
+    |
     |
     | .roles-table {
     |   margin: 20px auto;
@@ -289,9 +330,6 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   max-width: none; /* Supprime les limites de largeur */
     | }
     |
-    | .roles-table-container {
-    |   overflow-x: auto; /* Permet le défilement horizontal si nécessaire */
-    | }
     | .folded-player {
     |   opacity: 0.5; /* Réduit l'opacité pour griser */
     |   color: #888; /* Change la couleur du texte */
@@ -303,23 +341,6 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   height: 50px;
     |   margin-left: 5px;
     |   vertical-align: middle;
-    | }
-    | .handTable td, .communalTable td {
-    |   text-align: center;
-    |   border = none;
-    | }
-    | .card {
-    |  text-align: center; /* Centrer le contenu */
-    |  display: inline-block; /* Assure un alignement horizontal */
-    |  padding: 10px; /* Ajouter un espacement interne */
-    |  font-size: 8em; /* Agrandir les cartes */
-    |  color: #ffffff;
-    | }
-    | .cardHand{
-    |  text-align: center; /* Centrer le contenu */
-    |  display: inline-block; /* Assure un alignement horizontal */
-    |  padding: 10px; /* Ajouter un espacement interne */
-    |  font-size: 6.5em; /* Agrandir les cartes */
     | }
     |
     | .actions {
@@ -366,8 +387,9 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |  pointer-events: none; /* Empêche tout clic ou interaction */
     |  cursor: not-allowed; /* Indique visuellement que le bouton est désactivé */
     | }
+    |
     | .communal-card-pot {
-    |   padding: 20px;
+    |   padding: 0px;
     |   background-image: url('/static/table.jpg'); /* Chemin vers votre image */
     |   background-size: cover; /* Ajuste l'image pour couvrir tout l'arrière-plan */
     |   background-position: center; /* Centre l'image */
@@ -377,7 +399,6 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   display: flex;
     |   justify-content: center; /* Centre le tableau horizontalement */
     |   align-items: center;
-    |   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     |   width: 100%; /* S'assurer que le tableau prend tout l'espace disponible */
     | }
     |
@@ -394,6 +415,44 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   padding: 8px;
     |   text-align: center;
     |   background-color: #f2f2f2;
+    | }
+    |
+    |
+    | .handTable td {
+    |  width: auto; /* Laisser les cartes ajuster leur propre largeur */
+    | }
+    |
+    | .handTable td, .communalTable td {
+    |   text-align: center;
+    |   border = none;
+    | }
+    | .card-black {
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 8em; /* Agrandir les cartes */
+    |  color: #000000;
+    | }
+    | .card-red {
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 8em; /* Agrandir les cartes */
+    |  color: #ff0000;
+    | }
+    |
+    | .cardHand-black{
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 6.5em; /* Agrandir les cartes */
+    | }
+    | .cardHand-red{
+    |  text-align: center; /* Centrer le contenu */
+    |  display: inline-block; /* Assure un alignement horizontal */
+    |  padding: 10px; /* Ajouter un espacement interne */
+    |  font-size: 6.5em; /* Agrandir les cartes */
+    |   color: #ff0000;
     | }
     |
     | .potColumn {
@@ -424,11 +483,6 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     |   object-fit: contain; /* Conserve les proportions de l'image */
     | }
     |
-    | .handTable td {
-    |  text-align: center;
-    |  width: auto; /* Laisser les cartes ajuster leur propre largeur */
-    | }
-    |
     | .logs {
     |   margin: 10px auto;
     |   padding: 10px;
@@ -452,3 +506,5 @@ class TextUIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: T
     | }
     """.stripMargin
 }
+
+
