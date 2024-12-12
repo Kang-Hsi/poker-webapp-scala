@@ -95,7 +95,7 @@ class Logic extends StateMachine[Event, State, View]:
   private def renderTheStates(statesToRender: Seq[State]): Seq[Action[State]] =
     val renderStates = statesToRender.map(s => Action.Render(s))
     if renderStates.length == 2 then
-      Seq(renderStates(0), Action.Pause(1000), renderStates(1))
+      Seq(renderStates(0), Action.Pause(5000), renderStates(1))
     else renderStates
     
   private def transitionPhaseNTimes(state: Seq[State], times : Int):Seq[State]=

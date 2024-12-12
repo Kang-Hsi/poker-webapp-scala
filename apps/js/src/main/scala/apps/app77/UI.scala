@@ -390,26 +390,33 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     |
     | .communal-card-pot {
     |   padding: 0px;
-    |   background-image: url('/static/table.jpg'); /* Chemin vers votre image */
-    |   background-size: cover; /* Ajuste l'image pour couvrir tout l'arrière-plan */
-    |   background-position: center; /* Centre l'image */
-    |   background-repeat: no-repeat; /* Évite la répétition de l'image */
+    |   width: 100%;
+    |   height: 150px;
+    |   background-image: url('/static/table.jpg');
+    |   background-size: cover;
+    |   background-position: 50% 55%;
+    |   background-repeat: no-repeat;
+    |   overflow: hidden; /* ensures anything outside the container doesn't show *
     |   border-radius: 5px; /* Suppression de la bordure */
     |   text-align: center;
     |   display: flex;
     |   justify-content: center; /* Centre le tableau horizontalement */
     |   align-items: center;
     |   width: 100%; /* S'assurer que le tableau prend tout l'espace disponible */
+    |   
     | }
     |
     |
     | .communalTable td, .communalTable th {
     |   margin: 0 auto;
     |   padding: 8px;
+    |   padding-top: 1.5px;
     |   text-align: center;
     |   border: none; /* Conserver les bordures des cellules */
     |   width: 20%; /* Uniformiser la taille des cellules */
     | }
+    |
+    | 
     | .tableHeader {
     |   border: 1px solid #ddd;
     |   padding: 8px;
