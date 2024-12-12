@@ -343,7 +343,8 @@ extension (state: State)
     val playersNoTalked = players.map(_.withHasTalked(false))
     val gameInfoUpdated = state.gameInfo.copy(players = playersNoTalked)
 
-
+    state.copy(gameInfo = gameInfoUpdated)
+    
   /** Returns state with all players with 0 pot contribution
    * @retun
    *  state with all players with 0 pot cntribution
@@ -534,7 +535,7 @@ extension (state: State)
     *   state with the pot(s) distributed.
     */
   def distributePots(playingPlayers: List[PlayerInfo]): State =
-    state.copy(gameInfo = state.gameInfo.distributePotInternal(playingPlayers))
+    state.copy(gameInfo = state.gameInfo.distributePotInternal())
 
   /** Returns a sequence of states when ending round.
     *
@@ -631,7 +632,7 @@ extension (state: State)
     *   state after a round.
     */
   def transitionRound(): State =
-    if state.gameInfo.roundNumber >= state.gameConfig.maxRound then
+    if state.gameInfo.roundNumber >= state.gameConfig.maxRound || state.setStatus().gameInfo.players.count(_.isPlaying()) <= 2  then
       // game is ended
       state.endGame()
     else
@@ -837,6 +838,8 @@ extension (gameInfo: GameInfo)
 
     val players = gameInfo.players
 
+    println("DEBUG: rotatePlayerRoles before players: " + players)
+
     require(players.size >= 3)
     val playersWithIndex = players.zipWithIndex
 
@@ -864,6 +867,7 @@ extension (gameInfo: GameInfo)
 
       case None => throw Exception("No Big Blind in the game ??")
 
+      println("DEBUG: rotatePlayerRoles after players (result): " + newPlayers)
     gameInfo.copy(players = newPlayers)
 
   /** Returns game info with players order of the round. For preflop player
@@ -878,6 +882,8 @@ extension (gameInfo: GameInfo)
     */
   def setBeginOfRoundOrderInternal(state: State): GameInfo =
     val players = gameInfo.players
+
+    println("DEBUG: setBeginOfRoundOrder, players before set: " + players)
 
     val smallBlindPosition = players.indexWhere(player => player.isSmallBlind())
     val bigBlindPosition = players.indexWhere(player => player.isBigBlind())
@@ -915,7 +921,8 @@ extension (gameInfo: GameInfo)
     * @return
     *   gameInfo with pots distributed.
     */
-  def distributePotInternal(playingPlayers: List[PlayerInfo]): GameInfo =
+    /*
+  def distributePotInternal2(playingPlayers: List[PlayerInfo]): GameInfo =
 
     assert(
       playingPlayers.forall(_.isPlaying()),
@@ -1002,34 +1009,82 @@ extension (gameInfo: GameInfo)
 
           newGameInfo.distributePotInternal(
             playingPlayersWithoutLastWinner
-          )
+          )*/
 
 
-  def distribPot2(winnersExcluded: List[UserId]):State=
-    val allPlayers = gameInfo.players
-      .filter(p => !winnersExcluded.contains(p))
+  def createSidePots(): List[(List[UserId], Money)] =
+    val players = gameInfo.players
+
+    val contributions: List[(UserId, Money)] = players.map(player => (player.getUserId(), player.getPotContribution()))
+
+    val sortedContributions = contributions.sortBy((_, contribution) => contribution)
+
+    def newSidePot(remainingMoney: List[(UserId, Money)]): List[(List[UserId], Money)] =
+      
+      val zeroFiltered = remainingMoney.filter((_, contribution) => contribution > 0)
+
+      if zeroFiltered.isEmpty then Nil else 
+
+        val smallestContr = zeroFiltered.head._2
+        val thisPotPlayers = zeroFiltered.map((userId, _) => userId)
+
+        val thisPotSize = smallestContr * zeroFiltered.size
+
+        val remainingUpdated = 
+          remainingMoney.map((userId, contr) => if contr > 0 then (userId, contr - smallestContr) else (userId, contr) )
+
+        (thisPotPlayers, thisPotSize) :: newSidePot(remainingUpdated.sortBy(_._2))
+
+    newSidePot(sortedContributions)
+
+  def distributePotInternal(): GameInfo = 
+    
+    val sidePots = createSidePots()
+
+    println("DEBUG: Side POTS " + sidePots)
+    val players = gameInfo.players
 
     val communalCards = gameInfo.communalCards
 
-    val winners = CardHelper.findWinner(allPlayers, communalCards)
+    val winnersWithMoneyWon = sidePots.map(pot =>
+      val (potPlayersId, potSize) = pot
 
-    assert(winners.length >= 0, "No winner ??")
+      val playersInPot = players.filter(player => potPlayersId.contains(player.getUserId()))
 
-    val pot = gameInfo.pot
+      
+      //find winner only considers players playing
+      val winners = CardHelper.findWinner(playersInPot, communalCards)
+      
+      println("DEBUG: Winner is " + winners)
+      (winners.map(_.getUserId()), potSize)
+    
+    )
 
-    val winnersWithAmountTheyCanWinPerPot =
-      winners.map(w =>
-          (w,w.getPotContribution()/winners.length)
-          ).sortBy((a,potContr) => potContr)
+    println("DEBUG: Winners with money won! " + winnersWithMoneyWon)
+    
+    val playersEarnings = winnersWithMoneyWon.foldLeft(Map[UserId, Money]())(
+      (acc, winWithMoney) =>
+        val (winnersId, potSize) = winWithMoney
+        //case that there a no winners (a side pot where everyone folded)
+        if winnersId.nonEmpty then 
+          val moneyWon = potSize / winnersId.size
+          winnersId.foldLeft(acc)((newAcc, winnerId) =>
+            newAcc.updated(winnerId, newAcc.getOrElse(winnerId, 0) + moneyWon))
+        else 
+          acc
+    )
 
-    val pots = allPlayers.map(p=>p.getPotContribution())
+
+    val playersUpdated = players.map(player =>
+      val moneyWon = playersEarnings.getOrElse(player.getUserId(), 0)
+      player.updateMoney(moneyWon)
+    )
+    gameInfo.copy(players = playersUpdated, pot = 0)
 
 
-    val winnerWeService = winners.head
 
-    val allTruePlayers = gameInfo.players 
 
-    val newGameInfo =
+
 
 
 
