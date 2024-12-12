@@ -879,7 +879,7 @@ extension (gameInfo: GameInfo)
     val queueRotated = queuePlayers.enqueue(queuePlayers.dequeue())
     val newPlayingPlayers = queueRotated.zip(roles).map((p,r) => p.withRole(r)).toList
     val newPlayers = newPlayingPlayers ++ spectatingPlayers
-    gameInfo.copy(players = newPlayers)
+    gameInfo.copy(players = newPlayers).ensuring(gameInfo.players.size == players.size)
 
   /** Returns game info with players order of the round. For preflop player
     * after big blind starts. For flop, turn, river blind starts.
