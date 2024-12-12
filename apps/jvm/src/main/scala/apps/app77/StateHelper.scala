@@ -484,6 +484,13 @@ extension (state: State)
     */
   def transitionPhase: Seq[State] =
 
+    extension (st:State)
+      def addLogUpdatePot(amount:Money)=
+        if amount == 0 then
+          st
+        else
+          st.addLog("Added " + amount +"$ to the pot!")
+
     if state.gamePhase == EndRound ||
       state.gamePhase == EndGame
     then
@@ -510,7 +517,7 @@ extension (state: State)
         players = playersWithZeroBetAmount,
         pot = newPot
       )
-    ).addLog("Added " + allBetsTotal+"$ to the pot!")
+    ).addLogUpdatePot(allBetsTotal)
 
     preTransitionnedState.gamePhase match
       case PreFlop => Seq(preTransitionnedState.goToFlop())
@@ -1080,9 +1087,22 @@ extension (gameInfo: GameInfo)
       player.updateMoney(moneyWon)
     )
     gameInfo.copy(players = playersUpdated, pot = 0)
+      .addWinningLogs(playersEarnings)
+        
 
 
+  def addWinningLogs(playersEarnings: Map[UserId,Money])=
+    val winningLogs = playersEarnings.foldLeft(Nil)( (rest, e) => {
+        val (user, money) = e
+        if money <= 0 then
+          rest
+        else
+          (user + " won " + money + "$ !!!") :: rest
+    })
 
+    gameInfo.copy(
+      logs = winningLogs ++ gameInfo.logs     
+      )
 
 
 
