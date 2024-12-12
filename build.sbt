@@ -5,7 +5,7 @@ val commonSettings = Seq(
 
 /// Dependencies
 
-val webappLibRepo = uri("https://gitlab.epfl.ch/cs214/ul2024/webapp-lib.git#v0.8.0")
+val webappLibRepo = uri("https://gitlab.epfl.ch/cs214/ul2024/webapp-lib.git#v0.15.0")
 
 lazy val client: ProjectReference = ProjectRef(webappLibRepo, "webappLibJS")
 lazy val server: ProjectReference = ProjectRef(webappLibRepo, "webappLibJVM")
@@ -33,6 +33,12 @@ lazy val app = (crossProject(JVMPlatform, JSPlatform) in file("./apps"))
       "com.lihaoyi" %%% "scalatags" % "0.12.0",
     )
   ).jvmSettings(
+    assembly / assemblyJarName := "something.jar",
+    assembly / assemblyMergeStrategy := {
+      case _ => sbtassembly.MergeStrategy.first
+    },
+    assembly / mainClass := Some("apps.MainJVM"),
+
     run / fork := true,
     Global / cancelable := true,
     libraryDependencies ++= Seq(
