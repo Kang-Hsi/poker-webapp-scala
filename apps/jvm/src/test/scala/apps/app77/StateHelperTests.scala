@@ -160,6 +160,107 @@ class StateHelperTests extends FunSuite :
 
         assertEquals(mapIdRoleUpdated.sortBy((name, role) => name), mapIDRoleQueue.toList.sortBy((name, role) => name))
 
+    test("rotatePlayerRole: The rotation is handled properly with 3 players ") :
+        val numberOfPlayers = 3
+        val trickyRoles = List(Role.Dealer, Role.SmallBlind, Role.BigBlind)
+        val normal = List.tabulate(numberOfPlayers - 3)(i => Role.Normal)
+        val roles = trickyRoles ++ normal
+
+        val listIDs = createUserIds(numberOfPlayers).toSeq
+        val queueIDs = Queue(listIDs*)
+
+        val initalState = createInitialState(listIDs)
+
+        val updatedState = initalState.rotatePlayerRole()
+        val mapIdRoleUpdated = updatedState.gameInfo.players.map(playerInfo => (playerInfo._1, playerInfo._3))
+
+        val queueIDsRotated = queueIDs.enqueue(queueIDs.dequeue())
+        val mapIDRoleQueue  = queueIDsRotated.zip(roles)
+
+        assertEquals(mapIdRoleUpdated.sortBy((name, role) => name), mapIDRoleQueue.toList.sortBy((name, role) => name))
+
+    test("rotatePlayerRole: The rotation is handled properly with 4 players ") :
+        val numberOfPlayers = 4
+        val trickyRoles = List(Role.Dealer, Role.SmallBlind, Role.BigBlind)
+        val normal = List.tabulate(numberOfPlayers - 3)(i => Role.Normal)
+        val roles = trickyRoles ++ normal
+
+        val listIDs = createUserIds(numberOfPlayers).toSeq
+        val queueIDs = Queue(listIDs*)
+
+        val initalState = createInitialState(listIDs)
+
+        val updatedState = initalState.rotatePlayerRole()
+        val mapIdRoleUpdated = updatedState.gameInfo.players.map(playerInfo => (playerInfo._1, playerInfo._3))
+
+        val queueIDsRotated = queueIDs.enqueue(queueIDs.dequeue())
+        val mapIDRoleQueue  = queueIDsRotated.zip(roles)
+
+        assertEquals(mapIdRoleUpdated.sortBy((name, role) => name), mapIDRoleQueue.toList.sortBy((name, role) => name))
+
+    test("rotatePlayerRole: The rotation is handled properly with 5 players ") :
+        val numberOfPlayers = 5
+        val trickyRoles = List(Role.Dealer, Role.SmallBlind, Role.BigBlind)
+        val normal = List.tabulate(numberOfPlayers - 3)(i => Role.Normal)
+        val roles = trickyRoles ++ normal
+
+        val listIDs = createUserIds(numberOfPlayers).toSeq
+        val queueIDs = Queue(listIDs*)
+
+        val initalState = createInitialState(listIDs)
+
+        val updatedState = initalState.rotatePlayerRole()
+        val mapIdRoleUpdated = updatedState.gameInfo.players.map(playerInfo => (playerInfo._1, playerInfo._3))
+
+        val queueIDsRotated = queueIDs.enqueue(queueIDs.dequeue())
+        val mapIDRoleQueue  = queueIDsRotated.zip(roles)
+
+        assertEquals(mapIdRoleUpdated.sortBy((name, role) => name), mapIDRoleQueue.toList.sortBy((name, role) => name))
+
+    test("rotatePlayerRole: The rotation is handled properly with 6 players ") :
+        val numberOfPlayers = 6
+        val trickyRoles = List(Role.Dealer, Role.SmallBlind, Role.BigBlind)
+        val normal = List.tabulate(numberOfPlayers - 3)(i => Role.Normal)
+        val roles = trickyRoles ++ normal
+
+        val listIDs = createUserIds(numberOfPlayers).toSeq
+        val queueIDs = Queue(listIDs*)
+
+        val initalState = createInitialState(listIDs)
+
+        val updatedState = initalState.rotatePlayerRole()
+        val mapIdRoleUpdated = updatedState.gameInfo.players.map(playerInfo => (playerInfo._1, playerInfo._3))
+
+        val queueIDsRotated = queueIDs.enqueue(queueIDs.dequeue())
+        val mapIDRoleQueue  = queueIDsRotated.zip(roles)
+
+        assertEquals(mapIdRoleUpdated.sortBy((name, role) => name), mapIDRoleQueue.toList.sortBy((name, role) => name))
+
+    test("rotatePlayerRole: The rotation is handled properly with 7 players ") :
+        val numberOfPlayers = 7
+        val trickyRoles = List(Role.Dealer, Role.SmallBlind, Role.BigBlind)
+        val normal = List.tabulate(numberOfPlayers - 3)(i => Role.Normal)
+        val roles = trickyRoles ++ normal
+
+        val listIDs = createUserIds(numberOfPlayers).toSeq
+        val queueIDs = Queue(listIDs*)
+
+        val initalState = createInitialState(listIDs)
+
+        val updatedState = initalState.rotatePlayerRole()
+        val mapIdRoleUpdated = updatedState.gameInfo.players.map(playerInfo => (playerInfo._1, playerInfo._3))
+
+        val queueIDsRotated = queueIDs.enqueue(queueIDs.dequeue())
+        val mapIDRoleQueue  = queueIDsRotated.zip(roles)
+
+        assertEquals(mapIdRoleUpdated.sortBy((name, role) => name), mapIDRoleQueue.toList.sortBy((name, role) => name))
+
+
+
+
+
+
+
 
 
 
