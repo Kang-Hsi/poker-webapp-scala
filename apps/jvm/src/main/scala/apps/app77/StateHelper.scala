@@ -258,7 +258,7 @@ extension (state: State)
     println("INFO : " + user + " is checking.")
     state
       .withPlayerHasTalked(userIndex, true)
-      .addLog(user + " has called")
+      .addLog(user + " has checked.")
       .rotatePlayerTurn()
 
   /** Returns state with bet event applied.
@@ -290,7 +290,7 @@ extension (state: State)
     extension (state: State)
       def resetOrNotTheTalked() =
         if playerIsRaising then state.withNoPlayersTalked().addLog(user + " is raising by " + (state.gameInfo.players(userIndex).getBetAmount() - oldCheckAmount) + "$")
-        else state.addLog(user + " called") 
+        else state.addLog(user + " has called.") 
 
       def addLogIsAllIn()=
         if newStatus == Status.AllIn then
@@ -950,30 +950,40 @@ extension (gameInfo: GameInfo)
 
       
       //find winner only considers players playing
-      val winners = CardHelper.findWinner(playersInPot, communalCards)
+      val winnersAndHand = CardHelper.findWinner(playersInPot, communalCards)
+      val winners = winnersAndHand.map(w => w._1)
       
       println("DEBUG: Winner is " + winners)
       (winners.map(_.getUserId()), potSize)
     
     )
 
+    val winnersAndHand = CardHelper.findWinner(players, communalCards)
+
     println("DEBUG: Winners with money won! " + winnersWithMoneyWon)
     
-    val playersEarnings = winnersWithMoneyWon.foldLeft(Map[UserId, Money]())(
+    val playersEarnings = winnersWithMoneyWon.foldLeft(Map[UserId, (Money, Option[HandRank])]())(
       (acc, winWithMoney) =>
         val (winnersId, potSize) = winWithMoney
         //case that there a no winners (a side pot where everyone folded)
         if winnersId.nonEmpty then 
           val moneyWon = potSize / winnersId.size
           winnersId.foldLeft(acc)((newAcc, winnerId) =>
-            newAcc.updated(winnerId, newAcc.getOrElse(winnerId, 0) + moneyWon))
+            newAcc.updated(winnerId, 
+              (
+                (newAcc.getOrElse(winnerId, (0,None))._1 + moneyWon), 
+                winnersAndHand.find(
+                    p => p._1.getUserId() == winnerId).get._2
+            )
+          )
+        )
         else 
           acc
     )
 
 
     val playersUpdated = players.map(player =>
-      val moneyWon = playersEarnings.getOrElse(player.getUserId(), 0)
+      val moneyWon = playersEarnings.getOrElse(player.getUserId(), (0,None))._1
       player.updateMoney(moneyWon)
     )
     gameInfo.copy(players = playersUpdated, pot = 0)
@@ -981,13 +991,17 @@ extension (gameInfo: GameInfo)
         
 
 
-  def addWinningLogs(playersEarnings: Map[UserId,Money])=
+  def addWinningLogs(playersEarnings: Map[UserId,(Money, Option[HandRank])])=
     val winningLogs = playersEarnings.foldLeft(Nil)( (rest, e) => {
-        val (user, money) = e
+        val (user, (money, hand)) = e
         if money <= 0 then
           rest
         else
-          (user + " won " + money + "$ !!!") :: rest
+          if hand.isEmpty then
+            (user + " won " + money + "$ !!!") :: rest
+          else
+            (user + " won " + money + "$ !!! With this hand : " + hand.get.toString ) :: rest
+
     })
 
     gameInfo.copy(
@@ -995,7 +1009,11 @@ extension (gameInfo: GameInfo)
       )
 
 
-
+def doWeShowWinnerCards(players:List[PlayerInfo]):Boolean=
+  if players.count(p => p.isPlaying()) == 1 then
+    false
+  else
+    true
 
 
 
