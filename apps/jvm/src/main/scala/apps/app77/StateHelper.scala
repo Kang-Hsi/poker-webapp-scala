@@ -711,19 +711,7 @@ extension (state: State)
     val gameInfoUpdated = state.gameInfo.copy(players = updatedPlayers)
     state.copy(gameInfo = gameInfoUpdated)
 
-    /*
-    val smallBlindPlayer =
-      players.find(player => player.getRole() == SmallBlind).get
-    val bigBlindPlayer =
-      players.find(player => player.getRole() == BigBlind).get
-
-    val stateSB =
-      applyEventNaive(smallBlindPlayer.getUserId(), Event.Bet(smallBlind))
-
-    val stateBB =
-      stateSB.applyEventNaive(bigBlindPlayer.getUserId(), Event.Bet(bigBlind))
-
-    stateBB*/
+  
 
   /** Returns state with communal cards reset.
     *
@@ -909,107 +897,6 @@ extension (gameInfo: GameInfo)
           "no order needed for endRound/endGame"
         ) // should never happen
 
-  /** This methods does : 1 - finds winner 2 - gives him/her the money it
-    * deserves 3 - toggles it from the pot 4 - if pot not empty, recurses (case
-    * of multi pot) TODO potential problem: if winner is alled in , but noe
-    * layer folded, his bet will not be taken into account ; will fix after
-    */
-  /** Returns gameInfo with pots distributed.
-    *
-    * @param playingPlayers
-    *   a list of playing players
-    * @return
-    *   gameInfo with pots distributed.
-    */
-    /*
-  def distributePotInternal2(playingPlayers: List[PlayerInfo]): GameInfo =
-
-    assert(
-      playingPlayers.forall(_.isPlaying()),
-      "the players passed to distributePot must only be playing"
-    )
-
-    val allPlayers = gameInfo.players
-    val communalCards = gameInfo.communalCards
-
-    val winner = CardHelper.findWinner(playingPlayers, communalCards).head
-
-    val winnerIndex = allPlayers.indexWhere(_ == winner)
-
-    assert(winnerIndex >= 0, "No winner ??")
-
-    val pot = gameInfo.pot
-
-    winner.getStatus() match
-      case Status.Spectating =>
-        throw Exception("The winning player is not playing")
-
-      case Status.Playing =>
-        val winnerWithMoney = winner.updateMoney(pot)
-        gameInfo.copy(
-          players = allPlayers.updated(winnerIndex, winnerWithMoney),
-          pot = 0
-        )
-
-      case Status.AllIn =>
-        // mediocre code, I am sorry
-        // test case : a = 20 b = 10 c =30 d = 40 e = 40
-        // winners : a > c > e
-        //
-        // a wins over b;c;d;e
-        //            10; 20 ; 20 ;20
-        // new state of pot contributions :
-        //            0; 10; 20; 20
-        // c wins over d;e
-        //            10, 10
-        // new state : 10, 10
-        // e wins over d
-        //            10
-        val (updatedPlayers, amountHeWins) =
-          playingPlayers.foldLeft((Nil, 0))((rest, p) =>
-            if p == winner then rest
-            else if p.getPotContribution() >= winner.getPotContribution() then
-              (
-                p.updatePotContribution(
-                  -winner.getPotContribution()
-                ) :: rest._1,
-                rest._2 + winner.getPotContribution()
-              )
-            else
-              (
-                p.withPotContribution(0) :: rest._1,
-                rest._2 + p.getPotContribution()
-              )
-          )
-
-        val newPot = pot - amountHeWins
-
-        assert(newPot >= 0, "Pot <= 0 ??")
-
-        val winnerWithPot = winner.updateMoney(amountHeWins)
-
-        val newGameInfo =
-          gameInfo.copy(
-            players = allPlayers.updated(
-              winnerIndex,
-              winnerWithPot
-            ),
-            pot = newPot
-          )
-
-        if newPot == 0 then newGameInfo
-        else
-          val playingPlayersWithoutLastWinner =
-            playingPlayers.filter(p => p != winner)
-
-          assert(
-            playingPlayersWithoutLastWinner.length == playingPlayers.length - 1,
-            "Problem with how the last winner is toggled from the list"
-          )
-
-          newGameInfo.distributePotInternal(
-            playingPlayersWithoutLastWinner
-          )*/
 
 
   def createSidePots(): List[(List[UserId], Money)] =
