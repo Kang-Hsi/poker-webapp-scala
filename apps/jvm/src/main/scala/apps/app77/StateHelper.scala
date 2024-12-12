@@ -50,7 +50,7 @@ extension (state: State)
     *   state with players turn rotated.
     */
   def rotatePlayerTurn(): State =
-
+    (
     if (state.gameInfo.players.count(player => player.isOnlyPlaying()) <= 1 && hasEveryoneTalked) || state.gameInfo.players.filter(_.getStatus() != Status.Spectating).forall(_.isOnlyAllIn()) then
       println("DEBUG: ROTATING PLAYERS")
       state else
@@ -61,6 +61,8 @@ extension (state: State)
         newRotatedState.rotatePlayerTurn()
       else
         newRotatedState
+
+      ).ensuring(newState => newState.gameInfo.players.length == state.gameInfo.players.length)
 
   /** Returns state with the role of the players rotated. This function is
     * implemented in a "hard way". Since we have to assume it could be called
@@ -701,6 +703,7 @@ extension (state: State)
     *   state with all blinds executed.
     */
   def executeBlinds(): State =
+   ({ 
     val players = state.gameInfo.players
     val smallBlind = state.gameConfig.smallBlind
     val bigBlind = state.gameConfig.bigBlind
@@ -721,6 +724,7 @@ extension (state: State)
     val gameInfoUpdated = state.gameInfo.copy(players = updatedPlayers)
     state.copy(gameInfo = gameInfoUpdated)
 
+   }).ensuring(newState => newState.gameInfo.players.length == state.gameInfo.players.length)
 
 
   /** Returns state with communal cards reset.
