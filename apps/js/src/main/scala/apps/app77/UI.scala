@@ -51,8 +51,8 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
             if (rowData == 0) {
               role match
                 case Role.Dealer => s"Dealer"
-                case Role.SmallBlind => s"smallBlind(${view.gameConfig.smallBlind})"
-                case Role.BigBlind => s"BigBlind(${view.gameConfig.bigBlind})"
+                case Role.SmallBlind => s"smallBlind(${view.gameConfig.smallBlind}$$)"
+                case Role.BigBlind => s"BigBlind(${view.gameConfig.bigBlind}$$)"
                 case Role.Normal => s""
             } else if(rowData == 1)
               if(userId == currentplayer){
@@ -63,7 +63,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
             else if(rowData == 2) {
               s"${money}$$"
             }else{
-              s"${betAmount}$$"
+              s"+${betAmount}$$"
             }
             )
           )
@@ -217,7 +217,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     val callAmount = view.gameInfo.callAmount
 
     if (clientMoney <= callAmount) {
-      s"ALLIN ${clientMoney} $$!!"
+      s"ALLIN!!"
     } else {
       if(getcallAmount(view) == getclient(view)._6){
         s"Check"
