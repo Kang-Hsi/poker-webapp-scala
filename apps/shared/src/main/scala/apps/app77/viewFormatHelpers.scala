@@ -144,8 +144,7 @@ object viewFormatHelpers {
       case GamePhase.EndRound => ujson.Str("EndRound")
       case GamePhase.EndGame => ujson.Str("EndGame")
     def decodeGamePhase(json: Value): Try[GamePhase] = Try{
-      val obj = json.obj
-      obj("type").str match
+      json.str match
         case "PreFlop" => GamePhase.PreFlop
         case "Flop" => GamePhase.Flop
         case "Turn" => GamePhase.Turn

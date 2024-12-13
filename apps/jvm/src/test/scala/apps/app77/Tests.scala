@@ -139,6 +139,13 @@ class Tests extends WebappSuite[Event, State, View]:
     assertEquals(decode, playerInfo)
   }
 
+  test("Encoding and decoding fro gamePhase") {
+    val gamePhase = GamePhase.EndGame
+    val json = viewFormatHelpers.encodeGamePhase(gamePhase)
+    val decode = viewFormatHelpers.decodeGamePhase(json).get
+    assertEquals(decode, gamePhase)
+  }
+
    test("Encoding and decoding for view 1") {
       //testing different type of view
     val cards = Set((Suit.Heart, 10, "10 of heart"),(Suit.Heart, 8, "8 of heart"))
@@ -148,7 +155,8 @@ class Tests extends WebappSuite[Event, State, View]:
     val communalCards = List((Suit.Heart, 4, "4 of heart"))
     val gameInfo = new GameInfo(players, 4, communalCards, 200, List("test"), 500, 10, 20)
     val gameConfig = new GameConfig(15, 10, 20)
-    val view = new View(gameInfo, gameConfig)
+    val gamePhase = GamePhase.EndRound
+    val view = new View(gameInfo, gameConfig, gamePhase)
     println("View : " + view)
     val json = wire.viewFormat.encode(view)
     println("JSON view : " + json)
@@ -171,7 +179,8 @@ class Tests extends WebappSuite[Event, State, View]:
     val playerInfo = createInitialPlayerInfo(USER_IDS)
     val gameInfo = createInitialGameInfo(playerInfo)
     val gameConfig = new GameConfig(maxRound = 20, smallBlind = 1, bigBlind = 2)
-    val view = new View(gameInfo, gameConfig)
+    val gamePhase = GamePhase.EndRound
+    val view = new View(gameInfo, gameConfig, gamePhase)
     //println("View : " + view)
     val json = wire.viewFormat.encode(view)
     //println("JSON view : " + json)
