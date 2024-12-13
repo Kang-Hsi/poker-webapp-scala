@@ -39,6 +39,8 @@ case class OnePair(pairNumber: Int, kickers: List[Int]) extends HandRank {
           compareHighCard(kickers, otherKickers)
       
       case _ => throw new IllegalArgumentException("HandRank are not the same?!")
+
+  override def toString(): String = "Pairs of " + pairNumber + " with kickers " + kickers.mkString
 }
 
 case class TwoPair(highPairNumber: Int, lowPairNumber: Int, kicker: Int) extends HandRank {
