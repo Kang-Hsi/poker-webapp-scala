@@ -31,12 +31,15 @@ extension (state: State)
     val playersWithCards =
       (for {
         player <- players
-        if (player.isPlaying())
-      } yield player.withOptionHand(
-        Some(
-          Set(deckIterator.next(), deckIterator.next())
-        )
-      )).toList
+      } yield 
+        if player.isPlaying() then 
+          player.withOptionHand(
+          Some(
+            Set(deckIterator.next(), deckIterator.next())
+          ) 
+      ) else
+        player.withOptionHand(None)
+      ).toList
 
     val gameInfoUpdated = gameInfo.copy(players = playersWithCards)
     state.copy(
@@ -56,7 +59,6 @@ extension (state: State)
       state else
       println("DEBUG: ROTATING PLAYERS 2")
       val newRotatedState = state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
-      print("boucle")
       if !newRotatedState.gameInfo.players.head.isOnlyPlaying() then
         newRotatedState.rotatePlayerTurn()
       else
@@ -827,7 +829,9 @@ extension (gameInfo: GameInfo)
   def rotatePlayerTurnInternal(): GameInfo = //TODO check players that are not playing
     gameInfo.copy(players = {
       val oldPlayers = gameInfo.players
-      oldPlayers.drop(1).appended(oldPlayers.head)
+      val playersUpdated = oldPlayers.drop(1).appended(oldPlayers.head)
+      println("DEBUG: rotatePlayerTurnInternal : " + playersUpdated)
+      playersUpdated
     })
 
   /** Returns gameInfo with players role rotated. Simply put, new dealers, small
@@ -872,16 +876,22 @@ extension (gameInfo: GameInfo)
       println("DEBUG: rotatePlayerRoles after players (result): " + newPlayers)
     gameInfo.copy(players = newPlayers)
 
+  /** Returns gameInfo with players role rotated. Simply put, new dealers, small
+    * blind, big blind assigned. Makes sure to skip players not playing.
+    *
+    * @return
+    *   gameInfo with players role rotated.
+    */
   def rotatePlayerRolesInternal(): GameInfo =
     val players = gameInfo.players
-    val playingPlayers = players.filter(p => p._4 != Status.Spectating)
-    val spectatingPlayers = players.diff(playingPlayers).map(p => p.withRole(Normal))
+    val playingPlayers = players.filter(player => player.getStatus() != Status.Spectating)
+    val spectatingPlayers = players.diff(playingPlayers).map(player => player.withRole(Normal))
     val trickyRoles = List(Role.Dealer, Role.SmallBlind, Role.BigBlind)
     val normal = List.tabulate(playingPlayers.size - 3)(i => Role.Normal)
     val roles = trickyRoles ++ normal
     val queuePlayers = Queue(playingPlayers*)
     val queueRotated = queuePlayers.enqueue(queuePlayers.dequeue())
-    val newPlayingPlayers = queueRotated.zip(roles).map((p,r) => p.withRole(r)).toList
+    val newPlayingPlayers = queueRotated.zip(roles).map((player,role) => player.withRole(role)).toList
     val newPlayers = newPlayingPlayers ++ spectatingPlayers
     gameInfo.copy(players = newPlayers).ensuring(gameInfo.players.size == players.size)
 
@@ -907,17 +917,29 @@ extension (gameInfo: GameInfo)
     assert(bigBlindPosition >= 0, "No Big Blind?!")
 
     state.gamePhase match
-      case PreFlop | EndRound =>
-        gameInfo.copy(players =
+      case PreFlop | EndRound => {
+        val playersUpdated = 
           players.drop((bigBlindPosition + 1) % players.size) ++ players.take(
             (bigBlindPosition + 1) % players.size
           )
-        ).ensuring(g => g.players.size == players.size, "Preflop | EndRound should not drop any players")
+        
+        println("DEBUG: SetBeginOfRoundOrderInternal after players at " + state.gamePhase + " : " + playersUpdated)
 
-      case Flop | Turn | River  =>
-        gameInfo.copy(players =
+        gameInfo.copy(players = playersUpdated)
+
+      }.ensuring(g => g.players.size == players.size, "Preflop | EndRound should not drop any players")
+
+      case Flop | Turn | River  => {
+
+        val playersUpdated =
           players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
-        ).ensuring(g => g.players.size == players.size, "Flop | Turn |River should not drop any players")
+      
+        println("DEBUG: SetBeginOfRoundOrderInternal after players at " + state.gamePhase + " : " + playersUpdated)
+
+        gameInfo.copy(players = playersUpdated)
+        
+          
+        }.ensuring(g => g.players.size == players.size, "Flop | Turn |River should not drop any players")
 
       case EndGame =>
         throw Exception(
@@ -1017,7 +1039,7 @@ extension (gameInfo: GameInfo)
           if hand.isEmpty then
             (user + " won " + money + "$ !!!") :: rest
           else
-            (user + " won " + money + "$ !!! With this hand : " + hand.get.toString ) :: rest
+            (user + " won " + money + "$ !!! With " + hand.get.toString) :: rest
 
     })
 
