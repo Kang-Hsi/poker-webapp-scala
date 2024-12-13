@@ -229,7 +229,7 @@ extension (gameInfo: GameInfo)
       player.updateMoney(moneyWon)
     )
     gameInfo.copy(players = playersUpdated, pot = 0)
-      .addLogGameInfo("Communal cards of the round : " + gameInfo.communalCards)
+      .addCommunalCardsLog()
       .addWinningLogs(playersEarnings)
 
 
@@ -251,6 +251,12 @@ extension (gameInfo: GameInfo)
       logs = gameInfo.logs ++ winningLogs
       )
 
+
+  def addCommunalCardsLog():GameInfo=
+    val communalCards = gameInfo.communalCards.map(
+      c => c._2
+    ).map(cardsToString)
+    gameInfo.addLogGameInfo("Communal cards of the round : " + communalCards.mkString(", "))
 
   def addLogGameInfo(entry: String): GameInfo=
     val oldLogs = gameInfo.logs
