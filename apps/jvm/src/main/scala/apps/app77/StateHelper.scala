@@ -742,18 +742,13 @@ extension (state: State)
 
   /** Returns state with a sentence added to the log.
     *
-    * @param str
+    * @param entry
     *   a sentence.
     * @return
     *   state with a sentence added to the log.
     */
-  def addLog(str: String): State =
-    val stateLog = state.gameInfo.logs
-    val updatedLog = stateLog :+ str
-
-    val gameInfoUpdated = state.gameInfo.copy(logs = updatedLog)
-
-    state.copy(gameInfo = gameInfoUpdated)
+  def addLog(entry: String): State =
+    state.copy(gameInfo = state.gameInfo.addLogGameInfo(entry))
 
   /** Returns state with the minimum raise set. (Always big blind).
     *

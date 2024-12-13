@@ -229,6 +229,7 @@ extension (gameInfo: GameInfo)
       player.updateMoney(moneyWon)
     )
     gameInfo.copy(players = playersUpdated, pot = 0)
+      .addLogGameInfo("Communal cards of the round : " + gameInfo.communalCards)
       .addWinningLogs(playersEarnings)
 
 
@@ -251,13 +252,11 @@ extension (gameInfo: GameInfo)
       )
 
 
-def doWeShowWinnerCards(players:List[PlayerInfo]):Boolean=
-  if players.count(p => p.isPlaying()) == 1 then
-    false
-  else
-    true
-
-
-
+  def addLogGameInfo(entry: String): GameInfo=
+    val oldLogs = gameInfo.logs
+    gameInfo.copy(
+      logs = oldLogs :+ entry
+    )
+    
 
 
