@@ -1,7 +1,7 @@
 package apps.app77
 import cs214.webapp.*
 
-/* Defining the cards. 
+/* Defining the cards.
  *
  * The four suits.
  */
@@ -48,8 +48,8 @@ enum Role:
   case BigBlind
   case Normal
 
-given RoleOrd: Ordering[Role] with 
-  def compare(a: Role, b: Role) = 
+given RoleOrd: Ordering[Role] with
+  def compare(a: Role, b: Role) =
     (a,b) match
       case (Role.Dealer,_) => -1
       case (_, Role.Dealer) => 1
@@ -77,7 +77,7 @@ enum Event:
   case Bet(amount:Money) //used also for Call !!!!!!!
 
 
-case class GameConfig( 
+case class GameConfig(
   maxRound: Round,
   smallBlind: Int,
   bigBlind: Int
@@ -85,13 +85,14 @@ case class GameConfig(
 
 case class View (
   gameInfo: GameInfo,
-  gameConfig: GameConfig
+  gameConfig: GameConfig,
+  gamePhase: GamePhase
 )
 
 /**
   * The configuration/information of our poker game.
   *
-  * @param players the list of players 
+  * @param players the list of players
   * @param roundNumber the number of rounds the game will last
   * @param communalCards the communal cards (cards in the middle)
   * @param pot the pot (size)
@@ -107,7 +108,7 @@ case class GameInfo(
   pot: Pot,
   logs: List[String],//Logs with last entry being the most recent action
   callAmount: Money, //Useless
-  minRaise: Money, 
+  minRaise: Money,
   maxRaise: Money, //Useless but maybe useful on type Player?
 )
 
