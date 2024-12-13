@@ -32,7 +32,7 @@ class CardHelperTests extends FunSuite :
         val commCards = List(aceD, queenD, jackD) ++ nines
 
         val playerHand = List(kingD, tenD)
-        assertEquals(evaluateHand(commCards ++ playerHand), RoyalFlush())
+        assertEquals(evaluateHand(commCards ++ playerHand), RoyalFlush(Suit.Diamond))
 
     test("(9♦, Q♦, J♦, 8♦, 8) with (K♦, 10♦) should be StraightFlush(13) "):
         val queenD = CardHelper.allCards.filter(card => card._1 == Suit.Diamond && card._2 == 12)(0)
@@ -44,7 +44,7 @@ class CardHelperTests extends FunSuite :
 
         val commCards = List(queenD, jackD, nineD) ++ eights
         val playerHand = List(kingD, tenD)
-        assertEquals(evaluateHand(commCards ++ playerHand), StraightFlush(13))
+        assertEquals(evaluateHand(commCards ++ playerHand), StraightFlush(13, Suit.Diamond))
 
     test("(9, 9, 4, 2, 3) with (9, 9) should be FourOfAKind(9, kicker4)") :
         val nines = CardHelper.allCards.filter(card => card._2 == 9)
@@ -77,7 +77,7 @@ class CardHelperTests extends FunSuite :
         val commCards = List(aceD, queenD, jackD) ++ nines
         val playerHand = List(threeD, tenD)
 
-        assertEquals(evaluateHand(commCards ++ playerHand), Flush(List(14,12,11,10,3)))
+        assertEquals(evaluateHand(commCards ++ playerHand), Flush(List(14,12,11,10,3), Suit.Diamond))
 
     test("(A, 2, 5, 9, K) with (3, 4) should be Straight(5)"):
         val ace = CardHelper.allCards.filter(card => card._2 == 14)(0)
