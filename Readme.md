@@ -33,3 +33,13 @@ Leopold and Francesco will work on the server-side logic of the app, implementin
 ### Mock-ups
 
 ![](mockups/app.png)
+
+### Playing instructions
+
+To start a game of poker simply enter the names of the playing players (has to be at least 3 players).
+Join the game by selecting your name, and send the link to the other players.
+
+You will then have a simple UI, displaying all the information needed for a simple game of Texas Hold'em Poker. To play, when it's your turn, you can act by pressing the buttons: fold, check/call and raise (by a given entered amount). 
+
+For detailed rules of Texas Hold'em Poker, please check out this link: 
+https://www.pokernews.com/poker-rules/texas-holdem.htm 
