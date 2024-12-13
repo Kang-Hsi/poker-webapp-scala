@@ -28,11 +28,16 @@ object Wire extends AppWire[Event, View]:
     }
 
   override object viewFormat extends WireFormat[View] :
-    override def encode(view: View): Value = ujson.Arr(viewFormatHelpers.encodeGameInfo(view.gameInfo), viewFormatHelpers.encodeGameConfig(view.gameConfig))
+    override def encode(view: View): Value = ujson.Arr(
+      viewFormatHelpers.encodeGameInfo(view.gameInfo),
+      viewFormatHelpers.encodeGameConfig(view.gameConfig),
+      viewFormatHelpers.encodeGamePhase(view.gamePhase)
+      )
     override def decode(json: Value): Try[View] = Try{
       val arr = json.arr
       val gameInfo = viewFormatHelpers.decodeGameInfo(arr(0)).get
       val gameConfig = viewFormatHelpers.decodeGameConfig(arr(1)).get
-      View(gameInfo, gameConfig)
+      val gamePhase = viewFormatHelpers.decodeGamePhase(arr(2)).get
+      View(gameInfo, gameConfig, gamePhase)
     }
 
