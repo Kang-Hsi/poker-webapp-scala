@@ -133,21 +133,14 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
     val commCardPot = div(
       cls := "communal-card-pot",
-        table(
-          cls := "communalTable",
-          tr(
-            td(
-              table(
-                cls := "communalTable",
-                tr(
-                  for card <- cards yield td(
-                    cls := s"card ${if (card._1 == Suit.Heart|| card._1 == Suit.Diamond) "card-red" else "card-black"}", card._2)
-                )
-              )
-            )
-          )
+      for card <- cards yield div(
+        cls := "card-container",
+        div(
+          cls := s"card-icon ${if (card._1 == Suit.Heart || card._1 == Suit.Diamond) "card-red" else "card-black"}",
+          card._2
         )
       )
+    )
 
     val myCards = getclient(view)._5.get.map(card => (card._1,card._3)).toList
     val myMoney = getclient(view)._2
@@ -388,24 +381,6 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     |  cursor: not-allowed; /* Indique visuellement que le bouton est désactivé */
     | }
     |
-    | .communal-card-pot {
-    |   padding: 0px;
-    |   width: 100%;
-    |   height: 150px;
-    |   background-image: url('/static/table.jpg');
-    |   background-size: cover;
-    |   background-position: 50% 55%;
-    |   background-repeat: no-repeat;
-    |   overflow: hidden; /* ensures anything outside the container doesn't show *
-    |   border-radius: 5px; /* Suppression de la bordure */
-    |   text-align: center;
-    |   display: flex;
-    |   justify-content: center; /* Centre le tableau horizontalement */
-    |   align-items: center;
-    |   width: 100%; /* S'assurer que le tableau prend tout l'espace disponible */
-    |   
-    | }
-    |
     |
     | .communalTable td, .communalTable th {
     |   margin: 0 auto;
@@ -425,27 +400,61 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     | }
     |
     |
-    | .handTable td {
-    |  width: auto; /* Laisser les cartes ajuster leur propre largeur */
+    | .communal-card-pot {
+    |  display: flex; /* Alignement horizontal */
+    |  justify-content: center; /* Centre les cartes */
+    |  align-items: center; /* Aligne verticalement si nécessaire */
+    |  padding: 10px;
+    |  background-color: white;
+    |  border-radius: 5px;
+    |  overflow: hidden;
     | }
     |
-    | .handTable td, .communalTable td {
-    |   text-align: center;
-    |   border = none;
+    | .card-container {
+    |  display: flex; /* Utiliser flexbox */
+    |  justify-content: center; /* Centrer horizontalement */
+    |  align-items: center; /* Centrer verticalement */
+    |  background-color: white; /* Couleur de fond */
+    |  border-radius: 5px; /* Coins arrondis */
+    |  margin: 5px; /* Espacement externe */
+    |  overflow: hidden; /* Masque tout dépassement */
+    | }
+    |
+    | .card-icon {
+    |  display: flex; /* Utiliser flexbox pour un alignement parfait */
+    |  justify-content: center; /* Centrer horizontalement */
+    |  align-items: center; /* Centrer verticalement */
+    |  width: 100%; /* S'assurer que l'emoji occupe toute la largeur */
+    |  height: 100%; /* S'assurer que l'emoji occupe toute la hauteur */
+    |  font-size: 7rem; /* Ajuster la taille de l'emoji pour remplir le conteneur */
+    |  line-height: 1; /* Retirer les espaces supplémentaires autour de l'emoji */
+    |  overflow: hidden; /* Empêcher tout dépassement */
+    |  margin: 0; /* Retirer les marges supplémentaires */
+    |  padding: 0; /* Retirer les paddings supplémentaires */
+    |  border: none;
     | }
     | .card-black {
+    |  background-color: #FFFFFF;
     |  text-align: center; /* Centrer le contenu */
-    |  display: inline-block; /* Assure un alignement horizontal */
-    |  padding: 10px; /* Ajouter un espacement interne */
-    |  font-size: 8em; /* Agrandir les cartes */
-    |  color: #000000;
+    |  display: flex; /* Utiliser flexbox pour un alignement parfait */
+    |  justify-content: center; /* Centrer horizontalement */
+    |  align-items: center; /* Centrer verticalement */
+    |  width: 100%; /* Adapter la largeur au conteneur parent */
+    |  height: 100%; /* Adapter la hauteur au conteneur parent */
+    |  font-size: 6rem; /* Ajuster la taille des emojis */
+    |  color: #000000; /* Couleur du texte noir */
     | }
+    |
     | .card-red {
+    |  background-color: #FFFFFF;
     |  text-align: center; /* Centrer le contenu */
-    |  display: inline-block; /* Assure un alignement horizontal */
-    |  padding: 10px; /* Ajouter un espacement interne */
-    |  font-size: 8em; /* Agrandir les cartes */
-    |  color: #ff0000;
+    |  display: flex; /* Utiliser flexbox pour un alignement parfait */
+    |  justify-content: center; /* Centrer horizontalement */
+    |  align-items: center; /* Centrer verticalement */
+    |  width: 100%; /* Adapter la largeur au conteneur parent */
+    |  height: 100%; /* Adapter la hauteur au conteneur parent */
+    |  font-size: 6rem; /* Ajuster la taille des emojis */
+    |  color: #FF0000; /* Couleur du texte rouge */
     | }
     |
     | .cardHand-black{
@@ -485,8 +494,8 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     | }
     |
     | .pot-image-large {
-    |   width: 150px; /* Augmente la taille de l'image */
-    |   height: 150px;
+    |   width: 120px; /* Augmente la taille de l'image */
+    |   height: 120px;
     |   object-fit: contain; /* Conserve les proportions de l'image */
     | }
     |
