@@ -26,45 +26,51 @@ class Logic extends StateMachine[Event, State, View]:
   override def transition(state: State)(userId: UserId, event: Event): Try[Seq[Action[State]]] =
     Try({
 
-      val stateWithActionNaive = state.applyEventNaive(userId, event)
+      state.gamePhase match
 
+        case GamePhase.EndGame => throw IllegalMoveException("Game is ended!")
+
+        case GamePhase.EndRound => throw IllegalMoveException("Please wait")
+
+        case _ => 
+
+          val stateWithActionNaive = state.applyEventNaive(userId, event)
+
+          println("DEBUG: hasEveryoneTalked: " + stateWithActionNaive.hasEveryoneTalked)
+          println("DEBUG: hasEveryoneBettedSameAmount: " + stateWithActionNaive.hasEveryoneBettedSameAmount)
     
-
-      println("DEBUG: hasEveryoneTalked: " + stateWithActionNaive.hasEveryoneTalked)
-      println("DEBUG: hasEveryoneBettedSameAmount: " + stateWithActionNaive.hasEveryoneBettedSameAmount)
-
-      if (stateWithActionNaive.gameInfo.getAllOnlyPlayingPlayers.length == 1 && stateWithActionNaive.hasEveryoneTalked) 
-        || stateWithActionNaive.gameInfo.getAllOnlyPlayingPlayers.length == 0
-      then
-
-        println("INFO : We are skipping to endRound because only one player is left")
-        
-  
-        val nbToSkip = 4 - stateWithActionNaive.gamePhase.ordinal 
-
-        renderTheStates(
-          transitionPhaseNTimes(Seq(stateWithActionNaive), nbToSkip)
-        ) 
-      else if stateWithActionNaive.hasEveryoneTalked &&
-        stateWithActionNaive.hasEveryoneBettedSameAmount
-      then
-        println("DEBUG : Begin transitionning phase")
-        val states = stateWithActionNaive.transitionPhase
-
-        assert(states.length <= 2, "Not possible")
-
-        if states.length == 1 then
-          println("INFO : We are only transitionning a phase")
-        if states.length == 2 then
-          println("INFO : We are transitionning phase and round")
-
-        renderTheStates(states)
-      else
-        println("DEBUG : Transitionning simple event")
-
-        renderTheStates(Seq(stateWithActionNaive))
-    })
-
+          if (stateWithActionNaive.gameInfo.getAllOnlyPlayingPlayers.length == 1 && stateWithActionNaive.hasEveryoneTalked) 
+            || stateWithActionNaive.gameInfo.getAllOnlyPlayingPlayers.length == 0
+          then
+    
+            println("INFO : We are skipping to endRound because only one player is left")
+            
+      
+            val nbToSkip = 4 - stateWithActionNaive.gamePhase.ordinal 
+    
+            renderTheStates(
+              transitionPhaseNTimes(Seq(stateWithActionNaive), nbToSkip)
+            ) 
+          else if stateWithActionNaive.hasEveryoneTalked &&
+            stateWithActionNaive.hasEveryoneBettedSameAmount
+          then
+            println("DEBUG : Begin transitionning phase")
+            val states = stateWithActionNaive.transitionPhase
+    
+            assert(states.length <= 2, "Not possible")
+    
+            if states.length == 1 then
+              println("INFO : We are only transitionning a phase")
+            if states.length == 2 then
+              println("INFO : We are transitionning phase and round")
+    
+            renderTheStates(states)
+          else
+            println("DEBUG : Transitionning simple event")
+    
+            renderTheStates(Seq(stateWithActionNaive))
+        })
+    
   override def project(state: State)(userId: UserId): View =
 
     val gameInfoView = state.gameInfo
@@ -79,7 +85,8 @@ class Logic extends StateMachine[Event, State, View]:
 
     View(
       gameInfoView.copy(players = showOnlyUserCards),
-      gameConfigView
+      gameConfigView,
+      state.gamePhase
     )
 
   /** Transform a sequence of states in a sequence of actions. If the number of
