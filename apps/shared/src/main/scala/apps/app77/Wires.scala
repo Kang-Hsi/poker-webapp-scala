@@ -16,6 +16,7 @@ object Wire extends AppWire[Event, View]:
       case Check() => ujson.Obj("type" -> "check")
       case Fold()  => ujson.Obj("type" -> "fold")
       case Bet(amount) => ujson.Obj("type" -> "bet", "amount" -> ujson.Num(amount))
+      case Restart() => ujson.Obj("type" -> "restart")
 
     override def decode(json: Value): Try[Event] = Try {
       val obj = json.obj
@@ -25,6 +26,7 @@ object Wire extends AppWire[Event, View]:
         case "bet"   =>
           val amount = obj("amount").num.toInt
           Event.Bet(amount)
+        case "restart" => Event.Restart()
     }
 
   override object viewFormat extends WireFormat[View] :
