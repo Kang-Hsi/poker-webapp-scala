@@ -219,7 +219,7 @@ extension (gameInfo: GameInfo)
 
     val communalCards = gameInfo.communalCards
 
-    val winnersWithMoneyWon = sidePots.map(pot =>
+    val winnersWithMoneyWonAndRank = sidePots.map(pot =>
       val (potPlayersId, potSize) = pot
 
       val playersInPot =
@@ -230,26 +230,25 @@ extension (gameInfo: GameInfo)
       val winners = winnersAndHand.map(w => w._1)
 
       Logger.debug("Winner is " + winners)
-      (winners.map(_.getUserId()), potSize)
+      (winnersAndHand.map(w => (w._1.getUserId(), w._2)), potSize)
     )
 
-    val winnersAndHand = CardHelper.findWinner(players, communalCards)
 
-    Logger.debug("Winners with money won! " + winnersWithMoneyWon)
+    Logger.debug("Winners with money won! " + winnersWithMoneyWonAndRank)
 
-    val playersEarnings = winnersWithMoneyWon.foldLeft(
+    val playersEarnings = winnersWithMoneyWonAndRank.foldLeft(
       Map[UserId, (Money, Option[HandRank])]()
     )((acc, winWithMoney) =>
-      val (winnersId, potSize) = winWithMoney
+      val (winnersId, potSize ) = winWithMoney
       // case that there a no winners (i.e a side pot where everyone folded)
       if winnersId.nonEmpty then
         val moneyWon = potSize / winnersId.size
         winnersId.foldLeft(acc)((newAcc, winnerId) =>
           newAcc.updated(
-            winnerId,
+            winnerId._1,
             (
-              (newAcc.getOrElse(winnerId, (0, None))._1 + moneyWon),
-              winnersAndHand.find(p => p._1.getUserId() == winnerId).get._2
+              (newAcc.getOrElse(winnerId._1, (0, None))._1 + moneyWon),
+              winnerId._2
             )
           )
         )

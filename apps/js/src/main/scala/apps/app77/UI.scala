@@ -113,8 +113,8 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
               .asInstanceOf[HTMLInputElement]
             val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
             // Vérifie si la valeur est inférieure au minimum
-            val correctedAmount = math.max(raiseAmount, getcallAmount(view))
-            sendEvent(Event.Bet(correctedAmount))
+            //val correctedAmount = math.max(raiseAmount, getcallAmount(view))
+            sendEvent(Event.Bet(raiseAmount))
           }
           ,
           "Raise"
