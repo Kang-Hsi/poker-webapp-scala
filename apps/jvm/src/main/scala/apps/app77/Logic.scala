@@ -9,7 +9,7 @@ class Logic extends StateMachine[Event, State, View]:
   val appInfo: AppInfo = AppInfo(
     id = "app77",
     name = "♤ ♡ Poker ♧ ♢",
-    description = "Standard game of texas hold'em poker. (slightly modified)",
+    description = "Standard game of texas hold'em poker.",
     year = 2024
   )
 
@@ -65,7 +65,7 @@ class Logic extends StateMachine[Event, State, View]:
             Logger.debug("Begin transitionning phase")
             val states = stateWithActionNaive.transitionPhase
     
-            assert(states.length <= 2, "Not possible")
+            require(states.length <= 2, "Not possible")
     
             if states.length == 1 then
               Logger.debug("We are only transitionning a phase")
@@ -97,22 +97,30 @@ class Logic extends StateMachine[Event, State, View]:
       state.gamePhase
     )
 
-  /** Transform a sequence of states in a sequence of actions. If the number of
-    * states in a sequence is two, it will add a pause
-    */
 
-  /**
-    * Returns a sequence of actions given a sequence of states.
+  /** Returns a sequence of actions given a sequence of states.
     *
-    * @param statesToRender a sequence of states.
-    * @return a sequence of actions.
+    * @param statesToRender 
+    *   a sequence of states.
+    * @return 
+    *   a sequence of actions.
     */
   private def renderTheStates(statesToRender: Seq[State]): Seq[Action[State]] =
     val renderStates = statesToRender.map(s => Action.Render(s))
     if renderStates.length == 2 then
-      Seq(renderStates(0), Action.Pause(5000), renderStates(1))
+      Seq(renderStates(0), Action.Pause(3000), renderStates(1))
     else renderStates
     
+
+  /** Returns a sequence of states (transitioned n times).
+    *
+    * @param state 
+    *   a sequence of state.
+    * @param times 
+    *   number of times to transition.
+    * @return 
+    *   a sequence of states transitioned n times.
+    */
   private def transitionPhaseNTimes(state: Seq[State], times : Int):Seq[State]=
    if (times == 0) then
     state
