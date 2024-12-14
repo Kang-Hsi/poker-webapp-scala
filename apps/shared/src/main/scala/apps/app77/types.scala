@@ -75,6 +75,7 @@ enum Event:
   case Check()
   case Fold()
   case Bet(amount:Money) //used also for Call !!!!!!!
+  case Restart()
 
 
 case class GameConfig(
