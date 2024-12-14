@@ -164,6 +164,7 @@ extension (state: State)
 
     Logger.debug("Player doing action: " + player)
     event match
+      case Event.Restart() => throw IllegalMoveException("You cannot restart the game, as it is not yet ended.")
       case Event.Fold() =>
         val allPlaying = state.gameInfo.getAllPlayingPlayers
         if allPlaying.length == 1 then
@@ -286,7 +287,7 @@ extension (state: State)
       newStatus: Status,
       playerIsRaising: Boolean
   ): State =
-    Logger.info( + user + " is betting / calling.")
+    Logger.info( user + " is betting / calling.")
 
     val oldCheckAmount = state.getCallAmount()
 

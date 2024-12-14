@@ -28,11 +28,19 @@ class Logic extends StateMachine[Event, State, View]:
 
       state.gamePhase match
 
-        case GamePhase.EndGame => throw IllegalMoveException("Game is ended!")
-
         case GamePhase.EndRound => throw IllegalMoveException("Please wait")
 
+        case GamePhase.EndGame => 
+          if event == Event.Restart() then
+            Logger.info("Restarting the game")
+            renderTheStates(Seq(init(state.gameInfo.players.map(_.getUserId()))))
+          else
+            throw IllegalMoveException("Game is ended!")
+
         case _ => 
+
+          if (event == Event.Restart()) then
+            throw IllegalMoveException("You cannot restart the game as the game is not finished.")
 
           val stateWithActionNaive = state.applyEventNaive(userId, event)
 
