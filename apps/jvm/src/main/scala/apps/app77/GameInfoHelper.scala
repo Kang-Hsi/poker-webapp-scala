@@ -33,7 +33,7 @@ extension (gameInfo: GameInfo)
     gameInfo.copy(players = {
       val oldPlayers = gameInfo.players
       val playersUpdated = oldPlayers.drop(1).appended(oldPlayers.head)
-      println("DEBUG: rotatePlayerTurnInternal : " + playersUpdated)
+      Logger.debug("rotatePlayerTurnInternal : " + playersUpdated)
       playersUpdated
     })
 
@@ -47,7 +47,7 @@ extension (gameInfo: GameInfo)
 
     val players = gameInfo.players
 
-    println("DEBUG: rotatePlayerRoles before players: " + players)
+    Logger.debug("rotatePlayerRoles before players: " + players)
 
     require(players.size >= 3)
     val playersWithIndex = players.zipWithIndex
@@ -76,7 +76,7 @@ extension (gameInfo: GameInfo)
 
       case None => throw Exception("No Big Blind in the game ??")
 
-      println("DEBUG: rotatePlayerRoles after players (result): " + newPlayers)
+      Logger.debug(": rotatePlayerRoles after players (result): " + newPlayers)
     gameInfo.copy(players = newPlayers)
 
   /** Returns gameInfo with players role rotated. Simply put, new dealers, small
@@ -111,7 +111,7 @@ extension (gameInfo: GameInfo)
   def setBeginOfRoundOrderInternal(state: State): GameInfo =
     val players = gameInfo.players
 
-    println("DEBUG: setBeginOfRoundOrder, players before set: " + players)
+    Logger.debug("setBeginOfRoundOrder, players before set: " + players)
 
     val smallBlindPosition = players.indexWhere(player => player.isSmallBlind())
     val bigBlindPosition = players.indexWhere(player => player.isBigBlind())
@@ -126,7 +126,7 @@ extension (gameInfo: GameInfo)
             (bigBlindPosition + 1) % players.size
           )
         
-        println("DEBUG: SetBeginOfRoundOrderInternal after players at " + state.gamePhase + " : " + playersUpdated)
+        Logger.debug("SetBeginOfRoundOrderInternal after players at " + state.gamePhase + " : " + playersUpdated)
 
         gameInfo.copy(players = playersUpdated)
 
@@ -137,7 +137,7 @@ extension (gameInfo: GameInfo)
         val playersUpdated =
           players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
       
-        println("DEBUG: SetBeginOfRoundOrderInternal after players at " + state.gamePhase + " : " + playersUpdated)
+        Logger.debug("SetBeginOfRoundOrderInternal after players at " + state.gamePhase + " : " + playersUpdated)
 
         gameInfo.copy(players = playersUpdated)
         
@@ -180,7 +180,7 @@ extension (gameInfo: GameInfo)
 
     val sidePots = createSidePots()
 
-    println("DEBUG: Side POTS " + sidePots)
+    Logger.debug("Side POTS " + sidePots)
     val players = gameInfo.players
 
     val communalCards = gameInfo.communalCards
@@ -195,14 +195,14 @@ extension (gameInfo: GameInfo)
       val winnersAndHand = CardHelper.findWinner(playersInPot, communalCards)
       val winners = winnersAndHand.map(w => w._1)
       
-      println("DEBUG: Winner is " + winners)
+      Logger.debug("Winner is " + winners)
       (winners.map(_.getUserId()), potSize)
 
     )
 
     val winnersAndHand = CardHelper.findWinner(players, communalCards)
 
-    println("DEBUG: Winners with money won! " + winnersWithMoneyWon)
+    Logger.debug("Winners with money won! " + winnersWithMoneyWon)
     
     val playersEarnings = winnersWithMoneyWon.foldLeft(Map[UserId, (Money, Option[HandRank])]())(
       (acc, winWithMoney) =>

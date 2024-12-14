@@ -54,9 +54,9 @@ extension (state: State)
   def rotatePlayerTurn(): State =
     (
     if (state.gameInfo.players.count(player => player.isOnlyPlaying()) <= 1 && hasEveryoneTalked) || state.gameInfo.players.filter(_.getStatus() != Status.Spectating).forall(_.isOnlyAllIn()) then
-      println("DEBUG: ROTATING PLAYERS")
+      Logger.debug("ROTATING PLAYERS")
       state else
-      println("DEBUG: ROTATING PLAYERS 2")
+      Logger.debug("ROTATING PLAYERS 2")
       val newRotatedState = state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
       if !newRotatedState.gameInfo.players.head.isOnlyPlaying() then
         newRotatedState.rotatePlayerTurn()
@@ -76,7 +76,7 @@ extension (state: State)
     *   state with players roles rotated.
     */
   def rotatePlayerRole(): State =
-    println("DEBUG: RotatePlayerRoles gamePhase is " + state.gamePhase )
+    Logger.debug("RotatePlayerRoles gamePhase is " + state.gamePhase )
     state.copy(gameInfo = state.gameInfo.rotatePlayerRolesInternal())
 
   /** Returns state with the order of the round set. PreFlop: Player after big
@@ -162,7 +162,7 @@ extension (state: State)
 
     if userIndex != 0 then throw IllegalMoveException("please wait your turn")
 
-    println("DEBUG: Player doing action: " + player)
+    Logger.debug("Player doing action: " + player)
     event match
       case Event.Fold() =>
         val allPlaying = state.gameInfo.getAllPlayingPlayers
@@ -180,7 +180,7 @@ extension (state: State)
             "You cannot check, as you need to to call/raise!"
           )
 
-        println("DEBUG: " + " bet Amount: " + player.getBetAmount())
+        Logger.debug(" bet Amount: " + player.getBetAmount())
 
         state.applyCheck(user, userIndex)
 
@@ -195,13 +195,12 @@ extension (state: State)
         val totalBet = player.getBetAmount() + amount
         val callAmount = state.getCallAmount()
 
-        println("DEBUG: " + user + " callAmount = " + callAmount)
-        println("DEBUG: " + user + " old bet amount " + player.getBetAmount() + " and new bet amount: " + totalBet)
-        println("DEBUG: Bet amount is : " + amount)
+        Logger.debug( user + " callAmount = " + callAmount)
+        Logger.debug( user + " old bet amount " + player.getBetAmount() + " and new bet amount: " + totalBet)
+        Logger.debug("Bet amount is : " + amount)
         // player is calling
         if totalBet == callAmount then
           if player.getMoney() == amount then
-            println("PLAYER ALL IN JSEHFJHSLDJFKLJSDF")
             state.applyAllIn(user, userIndex, amount, false) else
           state.applyBet(user, userIndex, amount, Status.Playing, false)
         else if totalBet < callAmount then
@@ -242,7 +241,7 @@ extension (state: State)
     *   state with a fold event applied.
     */
   def applyFold(user: UserId, userIndex: Int): State =
-    println("INFO : " + user + " is folding.")
+    Logger.info( user + " is folding.")
     state
       .withPlayerUpdateStatus(userIndex, Status.Spectating)
       .withPlayerHasTalked(userIndex, true)
@@ -259,7 +258,7 @@ extension (state: State)
     *   state with a check event applied.
     */
   def applyCheck(user: UserId, userIndex: Int): State =
-    println("INFO : " + user + " is checking.")
+    Logger.info( user + " is checking.")
     state
       .withPlayerHasTalked(userIndex, true)
       .addLog(user + " has checked.")
@@ -287,7 +286,7 @@ extension (state: State)
       newStatus: Status,
       playerIsRaising: Boolean
   ): State =
-    println("INFO : " + user + " is betting / calling.")
+    Logger.info( + user + " is betting / calling.")
 
     val oldCheckAmount = state.getCallAmount()
 
@@ -312,8 +311,6 @@ extension (state: State)
       .withPlayerHasTalked(userIndex, true)
       .rotatePlayerTurn()
 
-    println("DEBUG: DONE ")
-
     stateUpdated
 
   /** Returns state with all in (bet) event applied.
@@ -335,7 +332,7 @@ extension (state: State)
       amount: Money,
       playerIsRaising: Boolean
   ): State =
-    println("INFO : " + user + " is alling in !")
+    Logger.info( user + " is alling in !")
     state.applyBet(user, userIndex, amount, Status.AllIn, playerIsRaising)
 
   /** Returns state with all players not talked.
@@ -344,7 +341,7 @@ extension (state: State)
     *   state with all players not talked.
     */
   def withNoPlayersTalked(): State =
-    println("DEBUG: WITH NO PLAYERS TALKED")
+    Logger.debug("WITH NO PLAYERS TALKED")
     val players = state.gameInfo.players
     val playersNoTalked = players.map(_.withHasTalked(false))
     val gameInfoUpdated = state.gameInfo.copy(players = playersNoTalked)
@@ -578,7 +575,7 @@ extension (state: State)
     *   flop state.
     */
   def goToFlop(): State =
-    println("DEBUG: GOING TO FLOP")
+    Logger.debug("GOING TO FLOP")
     state.addCommunal(3).nextPhase().cleanupNextPhase()
 
   /** Returns turn state.
@@ -587,7 +584,7 @@ extension (state: State)
     *   turn state.
     */
   def goToTurn(): State =
-    println("DEBUG: GOING TO TURN")
+    Logger.debug("GOING TO TURN")
     state.addCommunal(4).nextPhase().cleanupNextPhase()
 
   /** Returns river state.
@@ -596,7 +593,7 @@ extension (state: State)
     *   river state.
     */
   def goToRiver(): State =
-    println("DEBUG: GOING TO RIVER")
+    Logger.debug("GOING TO RIVER")
     state.addCommunal(5).nextPhase().cleanupNextPhase()
 
   /** Returns state cleaned up.
@@ -626,7 +623,7 @@ extension (state: State)
       throw IllegalArgumentException("State has too many communal cards.")
     else
       val cardsToAdd = outputCommunalCardLength - communalCards.length
-      println("INFO : adding " + cardsToAdd + " cards to the communal cards.")
+      Logger.info("adding " + cardsToAdd + " cards to the communal cards.")
 
       val newDeck = deck.drop(cardsToAdd)
       val newCommunalCards =
@@ -780,7 +777,7 @@ extension (state: State)
     val betAmounts = state.gameInfo.players
       .map(player => if player.isOnlyPlaying() then player.getBetAmount() else callAmount)
 
-    println("DEBUG: BET AMOUNTS -> " + betAmounts)
+    Logger.debug("BET AMOUNTS -> " + betAmounts)
     betAmounts.forall(bet => bet == callAmount)
 
 

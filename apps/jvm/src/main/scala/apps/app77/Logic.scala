@@ -36,14 +36,14 @@ class Logic extends StateMachine[Event, State, View]:
 
           val stateWithActionNaive = state.applyEventNaive(userId, event)
 
-          println("DEBUG: hasEveryoneTalked: " + stateWithActionNaive.hasEveryoneTalked)
-          println("DEBUG: hasEveryoneBettedSameAmount: " + stateWithActionNaive.hasEveryoneBettedSameAmount)
+          Logger.debug("hasEveryoneTalked: " + stateWithActionNaive.hasEveryoneTalked)
+          Logger.debug("hasEveryoneBettedSameAmount: " + stateWithActionNaive.hasEveryoneBettedSameAmount)
     
           if (stateWithActionNaive.gameInfo.getAllOnlyPlayingPlayers.length == 1 && stateWithActionNaive.hasEveryoneTalked) 
             || stateWithActionNaive.gameInfo.getAllOnlyPlayingPlayers.length == 0
           then
     
-            println("INFO : We are skipping to endRound because only one player is left")
+            Logger.info("We are skipping to endRound because only one player is left")
             
       
             val nbToSkip = 4 - stateWithActionNaive.gamePhase.ordinal 
@@ -54,19 +54,19 @@ class Logic extends StateMachine[Event, State, View]:
           else if stateWithActionNaive.hasEveryoneTalked &&
             stateWithActionNaive.hasEveryoneBettedSameAmount
           then
-            println("DEBUG : Begin transitionning phase")
+            Logger.debug("Begin transitionning phase")
             val states = stateWithActionNaive.transitionPhase
     
             assert(states.length <= 2, "Not possible")
     
             if states.length == 1 then
-              println("INFO : We are only transitionning a phase")
+              Logger.debug("We are only transitionning a phase")
             if states.length == 2 then
-              println("INFO : We are transitionning phase and round")
+              Logger.debug("We are transitionning phase and round")
     
             renderTheStates(states)
           else
-            println("DEBUG : Transitionning simple event")
+            Logger.debug("Transitionning simple event")
     
             renderTheStates(Seq(stateWithActionNaive))
         })

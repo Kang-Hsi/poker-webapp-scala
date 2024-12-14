@@ -56,7 +56,7 @@ object CardHelper:
         (userId, HandRank.evaluateHand(cards.toList))
       )
 
-      println("DEBUG: RANKINGS " + rankings)
+      Logger.debug("RANKINGS " + rankings)
       val highestRank = rankings.map((_, handRank) => handRank).max
 
 

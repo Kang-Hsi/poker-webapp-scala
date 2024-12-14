@@ -34,9 +34,16 @@ trait Configuration:
   **/
   def getRoundNumberToMultiplyChipIn : Round
 
+  /**
+   * Returs the log level for the stdout :
+   * 3 = print everything (DEBUGS, INFO & WARN)
+   * 2 = print only INFO & WARN
+   * 1 = print onyl WARN
+   * 0 = print nothing
+  **/
+  def loggerPrintLevel: Int
+
   
-
-
 
 
 object Configuration:
@@ -46,6 +53,7 @@ object Configuration:
     def getSmallBlind: Money = 1
     def getBigBlind: Money = 2
     def getRoundNumberToMultiplyChipIn: Round = 5
+    def loggerPrintLevel = 3
     
   def get(using conf:Configuration)= conf
 
