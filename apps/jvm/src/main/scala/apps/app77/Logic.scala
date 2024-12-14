@@ -9,7 +9,7 @@ class Logic extends StateMachine[Event, State, View]:
   val appInfo: AppInfo = AppInfo(
     id = "app77",
     name = "♤ ♡ Poker ♧ ♢",
-    description = "Standard game of texas hold'em poker. (slightly modified)",
+    description = "Standard game of texas hold'em poker.",
     year = 2024
   )
 
@@ -28,22 +28,30 @@ class Logic extends StateMachine[Event, State, View]:
 
       state.gamePhase match
 
-        case GamePhase.EndGame => throw IllegalMoveException("Game is ended!")
-
         case GamePhase.EndRound => throw IllegalMoveException("Please wait")
+
+        case GamePhase.EndGame => 
+          if event == Event.Restart() then
+            Logger.info("Restarting the game")
+            renderTheStates(Seq(init(state.gameInfo.players.map(_.getUserId()))))
+          else
+            throw IllegalMoveException("Game is ended!")
 
         case _ => 
 
+          if (event == Event.Restart()) then
+            throw IllegalMoveException("You cannot restart the game as the game is not finished.")
+
           val stateWithActionNaive = state.applyEventNaive(userId, event)
 
-          println("DEBUG: hasEveryoneTalked: " + stateWithActionNaive.hasEveryoneTalked)
-          println("DEBUG: hasEveryoneBettedSameAmount: " + stateWithActionNaive.hasEveryoneBettedSameAmount)
+          Logger.debug("hasEveryoneTalked: " + stateWithActionNaive.hasEveryoneTalked)
+          Logger.debug("hasEveryoneBettedSameAmount: " + stateWithActionNaive.hasEveryoneBettedSameAmount)
     
           if (stateWithActionNaive.gameInfo.getAllOnlyPlayingPlayers.length == 1 && stateWithActionNaive.hasEveryoneTalked) 
             || stateWithActionNaive.gameInfo.getAllOnlyPlayingPlayers.length == 0
           then
     
-            println("INFO : We are skipping to endRound because only one player is left")
+            Logger.info("We are skipping to endRound because only one player is left")
             
       
             val nbToSkip = 4 - stateWithActionNaive.gamePhase.ordinal 
@@ -54,19 +62,19 @@ class Logic extends StateMachine[Event, State, View]:
           else if stateWithActionNaive.hasEveryoneTalked &&
             stateWithActionNaive.hasEveryoneBettedSameAmount
           then
-            println("DEBUG : Begin transitionning phase")
+            Logger.debug("Begin transitionning phase")
             val states = stateWithActionNaive.transitionPhase
     
-            assert(states.length <= 2, "Not possible")
+            require(states.length <= 2, "Not possible")
     
             if states.length == 1 then
-              println("INFO : We are only transitionning a phase")
+              Logger.debug("We are only transitionning a phase")
             if states.length == 2 then
-              println("INFO : We are transitionning phase and round")
+              Logger.debug("We are transitionning phase and round")
     
             renderTheStates(states)
           else
-            println("DEBUG : Transitionning simple event")
+            Logger.debug("Transitionning simple event")
     
             renderTheStates(Seq(stateWithActionNaive))
         })
@@ -89,22 +97,30 @@ class Logic extends StateMachine[Event, State, View]:
       state.gamePhase
     )
 
-  /** Transform a sequence of states in a sequence of actions. If the number of
-    * states in a sequence is two, it will add a pause
-    */
 
-  /**
-    * Returns a sequence of actions given a sequence of states.
+  /** Returns a sequence of actions given a sequence of states.
     *
-    * @param statesToRender a sequence of states.
-    * @return a sequence of actions.
+    * @param statesToRender 
+    *   a sequence of states.
+    * @return 
+    *   a sequence of actions.
     */
   private def renderTheStates(statesToRender: Seq[State]): Seq[Action[State]] =
     val renderStates = statesToRender.map(s => Action.Render(s))
     if renderStates.length == 2 then
-      Seq(renderStates(0), Action.Pause(5000), renderStates(1))
+      Seq(renderStates(0), Action.Pause(3000), renderStates(1))
     else renderStates
     
+
+  /** Returns a sequence of states (transitioned n times).
+    *
+    * @param state 
+    *   a sequence of state.
+    * @param times 
+    *   number of times to transition.
+    * @return 
+    *   a sequence of states transitioned n times.
+    */
   private def transitionPhaseNTimes(state: Seq[State], times : Int):Seq[State]=
    if (times == 0) then
     state
