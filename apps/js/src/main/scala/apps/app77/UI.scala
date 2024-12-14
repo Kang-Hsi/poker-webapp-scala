@@ -201,11 +201,9 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     val client = view.gameInfo.players.filter(p => p._5.isDefined)
     val newPlayerHand = Option(Set(new Card(Suit.Spades, 0, " 🂠 "), new Card(Suit.Spades, 0, "🂠")))
     if (client.isEmpty) then
-      print("DEBUG CLIENT LOST : ")
       view.gameInfo.players.filter(p => p._2 == 0)(0).copy(_5 = newPlayerHand)
-      // As the client has loose, we will have to give him a empty hand
+      // As the client has lost, we will have to give him a empty hand
     else
-      print("Client not empty")
       client(0)
   }
   private def callButtonText(view: View): String = {
