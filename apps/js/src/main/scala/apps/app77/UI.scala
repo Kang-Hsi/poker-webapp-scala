@@ -4,13 +4,10 @@ import cs214.webapp.*
 import cs214.webapp.client.*
 import cs214.webapp.client.graphics.*
 import scalatags.JsDom.all._
-
-
 import scala.scalajs.js.annotation.JSExportTopLevel
 import cs214.webapp.EventResponse.Wire
 import org.scalajs.dom
 import org.scalajs.dom.{document, HTMLInputElement}
-
 
 @JSExportTopLevel("app77")
 object TextUI extends WSClientApp:
@@ -202,8 +199,12 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
   def getclient(view: View): PlayerInfo = {
     val client = view.gameInfo.players.filter(p => p._5.isDefined)
-    require(client.size == 1)
-    client(0)
+    val newPlayerHand = Option(Set(new Card(Suit.Spades, 0, " 🂠 "), new Card(Suit.Spades, 0, "🂠")))
+    if (client.isEmpty) then
+      view.gameInfo.players.filter(p => p._2 == 0)(0).copy(_5 = newPlayerHand)
+      // As the client has lost, we will have to give him a empty hand
+    else
+      client(0)
   }
   private def callButtonText(view: View): String = {
     val clientMoney = getclient(view)._2
@@ -391,7 +392,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     |   width: 20%; /* Uniformiser la taille des cellules */
     | }
     |
-    | 
+    |
     | .tableHeader {
     |   border: 1px solid #ddd;
     |   padding: 8px;
@@ -480,7 +481,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     |  padding: 10px; /* Espacement interne */
     |  text-align: center;
     | }
-    | 
+    |
     | .pot-display {
     |   display: flex;
     |   flex-direction: column; /* Colonne pour aligner le montant au-dessus de l'image */
