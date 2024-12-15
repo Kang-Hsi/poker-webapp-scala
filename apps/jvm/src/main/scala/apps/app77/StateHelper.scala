@@ -1,11 +1,9 @@
 package apps.app77
 
 import apps.app77.CardHelper.shuffle
-import apps.app77.Logic
 import apps.app77.GamePhase.*
 import apps.app77.Role.*
 import cs214.webapp.*
-import scala.collection.mutable.Queue
 
 extension (state: State)
 
@@ -31,15 +29,14 @@ extension (state: State)
     val playersWithCards =
       (for {
         player <- players
-      } yield 
-        if player.isPlaying() then 
+      } yield
+        if player.isPlaying() then
           player.withOptionHand(
-          Some(
-            Set(deckIterator.next(), deckIterator.next())
-          ) 
-      ) else
-        player.withOptionHand(None)
-      ).toList
+            Some(
+              Set(deckIterator.next(), deckIterator.next())
+            )
+          )
+        else player.withOptionHand(None)).toList
 
     val gameInfoUpdated = gameInfo.copy(players = playersWithCards)
     state.copy(
@@ -54,17 +51,25 @@ extension (state: State)
     */
   def rotatePlayerTurn(): State =
     (
-    if (state.gameInfo.players.count(player => player.isOnlyPlaying()) <= 1 && hasEveryoneTalked) || state.gameInfo.players.filter(_.getStatus() != Status.Spectating).forall(_.isOnlyAllIn()) then
-      println("DEBUG: ROTATING PLAYERS")
-      state else
-      println("DEBUG: ROTATING PLAYERS 2")
-      val newRotatedState = state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
-      if !newRotatedState.gameInfo.players.head.isOnlyPlaying() then
-        newRotatedState.rotatePlayerTurn()
+      if (state.gameInfo.players.count(player =>
+          player.isOnlyPlaying()
+        ) <= 1 && hasEveryoneTalked) || state.gameInfo.players
+          .filter(_.getStatus() != Status.Spectating)
+          .forall(_.isOnlyAllIn())
+      then
+        Logger.debug("ROTATING PLAYERS")
+        state
       else
-        newRotatedState
-
-      ).ensuring(newState => newState.gameInfo.players.length == state.gameInfo.players.length)
+        Logger.debug("ROTATING PLAYERS 2")
+        val newRotatedState =
+          state.copy(gameInfo = state.gameInfo.rotatePlayerTurnInternal())
+        if !newRotatedState.gameInfo.players.head.isOnlyPlaying() then
+          newRotatedState.rotatePlayerTurn()
+        else newRotatedState
+    )
+    .ensuring(newState =>
+      newState.gameInfo.players.length == state.gameInfo.players.length
+    )
 
   /** Returns state with the role of the players rotated. This function is
     * implemented in a "hard way". Since we have to assume it could be called
@@ -77,7 +82,7 @@ extension (state: State)
     *   state with players roles rotated.
     */
   def rotatePlayerRole(): State =
-    println("DEBUG: RotatePlayerRoles gamePhase is " + state.gamePhase )
+    Logger.debug("RotatePlayerRoles gamePhase is " + state.gamePhase)
     state.copy(gameInfo = state.gameInfo.rotatePlayerRolesInternal())
 
   /** Returns state with the order of the round set. PreFlop: Player after big
@@ -87,12 +92,12 @@ extension (state: State)
     *   state with the order of the round set.
     */
   def setBeginOfRoundOrder(): State =
-    val stateWithOrder = state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal(state))
+    val stateWithOrder =
+      state.copy(gameInfo = state.gameInfo.setBeginOfRoundOrderInternal(state))
 
     if !stateWithOrder.gameInfo.players.head.isOnlyPlaying() then
       stateWithOrder.rotatePlayerTurn()
-    else
-      stateWithOrder
+    else stateWithOrder
 
   /** Returns state with the blinds populated (depending on the game's
     * configuration).
@@ -163,8 +168,12 @@ extension (state: State)
 
     if userIndex != 0 then throw IllegalMoveException("please wait your turn")
 
-    println("DEBUG: Player doing action: " + player)
+    Logger.debug("Player doing action: " + player)
     event match
+      case Event.Restart() =>
+        throw IllegalMoveException(
+          "You cannot restart the game, as it is not yet ended."
+        )
       case Event.Fold() =>
         val allPlaying = state.gameInfo.getAllPlayingPlayers
         if allPlaying.length == 1 then
@@ -181,13 +190,12 @@ extension (state: State)
             "You cannot check, as you need to to call/raise!"
           )
 
-        println("DEBUG: " + " bet Amount: " + player.getBetAmount())
+        Logger.debug(" bet Amount: " + player.getBetAmount())
 
         state.applyCheck(user, userIndex)
 
       case Event.Bet(amount) =>
         require(amount > 0, "cannot bet <= 0")
-
 
         // shouldn't happen though
         if player.getMoney() < amount then
@@ -196,15 +204,17 @@ extension (state: State)
         val totalBet = player.getBetAmount() + amount
         val callAmount = state.getCallAmount()
 
-        println("DEBUG: " + user + " callAmount = " + callAmount)
-        println("DEBUG: " + user + " old bet amount " + player.getBetAmount() + " and new bet amount: " + totalBet)
-        println("DEBUG: Bet amount is : " + amount)
+        Logger.debug(user + " callAmount = " + callAmount)
+        Logger.debug(
+          user + " old bet amount " + player
+            .getBetAmount() + " and new bet amount: " + totalBet
+        )
+        Logger.debug("Bet amount is : " + amount)
         // player is calling
         if totalBet == callAmount then
           if player.getMoney() == amount then
-            println("PLAYER ALL IN JSEHFJHSLDJFKLJSDF")
-            state.applyAllIn(user, userIndex, amount, false) else
-          state.applyBet(user, userIndex, amount, Status.Playing, false)
+            state.applyAllIn(user, userIndex, amount, false)
+          else state.applyBet(user, userIndex, amount, Status.Playing, false)
         else if totalBet < callAmount then
           // player is calling but does not have enough money => all-in
           if player.getMoney() == amount then
@@ -243,7 +253,7 @@ extension (state: State)
     *   state with a fold event applied.
     */
   def applyFold(user: UserId, userIndex: Int): State =
-    println("INFO : " + user + " is folding.")
+    Logger.info(user + " is folding.")
     state
       .withPlayerUpdateStatus(userIndex, Status.Spectating)
       .withPlayerHasTalked(userIndex, true)
@@ -260,7 +270,7 @@ extension (state: State)
     *   state with a check event applied.
     */
   def applyCheck(user: UserId, userIndex: Int): State =
-    println("INFO : " + user + " is checking.")
+    Logger.info(user + " is checking.")
     state
       .withPlayerHasTalked(userIndex, true)
       .addLog(user + " has checked.")
@@ -288,20 +298,26 @@ extension (state: State)
       newStatus: Status,
       playerIsRaising: Boolean
   ): State =
-    println("INFO : " + user + " is betting / calling.")
+    Logger.info(user + " is betting / calling.")
 
     val oldCheckAmount = state.getCallAmount()
 
     extension (state: State)
       def resetOrNotTheTalked() =
-        if playerIsRaising then state.withNoPlayersTalked().addLog(user + " is raising by " + (state.gameInfo.players(userIndex).getBetAmount() - oldCheckAmount) + "$")
-        else state.addLog(user + " has called.") 
+        if playerIsRaising then
+          state
+            .withNoPlayersTalked()
+            .addLog(
+              user + " is raising by " + (state.gameInfo
+                .players(userIndex)
+                .getBetAmount() - oldCheckAmount) + "$"
+            )
+        else state.addLog(user + " has called.")
 
-      def addLogIsAllIn()=
+      def addLogIsAllIn() =
         if newStatus == Status.AllIn then
           state.addLog("And " + user + " is all'd in!")
-        else
-          state
+        else state
 
     val stateUpdated = state
       .withPlayerUpdateMoney(userIndex, -amount)
@@ -312,8 +328,6 @@ extension (state: State)
       .addLogIsAllIn()
       .withPlayerHasTalked(userIndex, true)
       .rotatePlayerTurn()
-
-    println("DEBUG: DONE ")
 
     stateUpdated
 
@@ -336,7 +350,7 @@ extension (state: State)
       amount: Money,
       playerIsRaising: Boolean
   ): State =
-    println("INFO : " + user + " is alling in !")
+    Logger.info(user + " is alling in !")
     state.applyBet(user, userIndex, amount, Status.AllIn, playerIsRaising)
 
   /** Returns state with all players not talked.
@@ -345,7 +359,7 @@ extension (state: State)
     *   state with all players not talked.
     */
   def withNoPlayersTalked(): State =
-    println("DEBUG: WITH NO PLAYERS TALKED")
+    Logger.debug("WITH NO PLAYERS TALKED")
     val players = state.gameInfo.players
     val playersNoTalked = players.map(_.withHasTalked(false))
     val gameInfoUpdated = state.gameInfo.copy(players = playersNoTalked)
@@ -353,18 +367,14 @@ extension (state: State)
     state.copy(gameInfo = gameInfoUpdated)
 
   /** Returns state with all players with 0 pot contribution
-   * @retun
-   *  state with all players with 0 pot cntribution
-   */
+    * @retun
+    *   state with all players with 0 pot cntribution
+    */
 
-  def withNoBetContributionPlayers(): State=
+  def withNoBetContributionPlayers(): State =
     val players = state.gameInfo.players
     val playersNoContrib = players.map(_.withPotContribution(0))
     val gameInfoUpdated = state.gameInfo.copy(players = playersNoContrib)
-
-
-
-
 
     state.copy(gameInfo = gameInfoUpdated)
 
@@ -377,18 +387,22 @@ extension (state: State)
     * @return
     *   state with a player's pot contribution updated.
     */
-  def withPlayerUpdatePotContribution(userIndex: Int, potContributionToAddOrSub: Money): State =
+  def withPlayerUpdatePotContribution(
+      userIndex: Int,
+      potContributionToAddOrSub: Money
+  ): State =
     val players = state.gameInfo.players
     val playersWithIndex = players.zipWithIndex
 
     val playersUpdated = playersWithIndex.map((player, index) =>
-      if index == userIndex then player.updatePotContribution(potContributionToAddOrSub) else player
+      if index == userIndex then
+        player.updatePotContribution(potContributionToAddOrSub)
+      else player
     )
 
     val gameInfoUpdated = state.gameInfo.copy(players = playersUpdated)
 
     state.copy(gameInfo = gameInfoUpdated)
-
 
   /** Returns state with a player's status updated.
     *
@@ -491,12 +505,10 @@ extension (state: State)
     */
   def transitionPhase: Seq[State] =
 
-    extension (st:State)
-      def addLogUpdatePot(amount:Money)=
-        if amount == 0 then
-          st
-        else
-          st.addLog("Added " + amount +"$ to the pot!")
+    extension (st: State)
+      def addLogUpdatePot(amount: Money) =
+        if amount == 0 then st
+        else st.addLog("Added " + amount + "$ to the pot!")
 
     if state.gamePhase == EndRound ||
       state.gamePhase == EndGame
@@ -519,12 +531,14 @@ extension (state: State)
     val playersWithZeroBetAmount =
       players.map(player => player.withBetAmount(0).withHasTalked(false))
 
-    val preTransitionnedState = state.copy(
-      gameInfo = state.gameInfo.copy(
-        players = playersWithZeroBetAmount,
-        pot = newPot
+    val preTransitionnedState = state
+      .copy(
+        gameInfo = state.gameInfo.copy(
+          players = playersWithZeroBetAmount,
+          pot = newPot
+        )
       )
-    ).addLogUpdatePot(allBetsTotal)
+      .addLogUpdatePot(allBetsTotal)
 
     preTransitionnedState.gamePhase match
       case PreFlop => Seq(preTransitionnedState.goToFlop())
@@ -535,8 +549,6 @@ extension (state: State)
         throw Exception(
           "the transition shouldn't be called in endRound / endGame as they are only 'ephemeral' states"
         )
-
-
 
   /** Returns state with the pot(s) distributed to each player.
     *
@@ -561,13 +573,7 @@ extension (state: State)
     *   a sequence of state when ending round.
     */
   def goToEndRound(): Seq[State] =
-    val playingPlayers = getAllPlayingPlayers(state.gameInfo)
-    // error might be here, since a player
-    // that is not playing, can still have contributed to the pot.
-    // This should maybe be changed to "get players that contributed"
-    // in case the winner is a subPot. WIll change later if we have the time
-
-    // can simply reset players bet amount to zero if playing. if not playing don't reset?
+    val playingPlayers = state.gameInfo.getAllPlayingPlayers
 
     val endState = state.distributePots(playingPlayers).nextPhase()
 
@@ -579,7 +585,7 @@ extension (state: State)
     *   flop state.
     */
   def goToFlop(): State =
-    println("DEBUG: GOING TO FLOP")
+    Logger.debug("GOING TO FLOP")
     state.addCommunal(3).nextPhase().cleanupNextPhase()
 
   /** Returns turn state.
@@ -588,7 +594,7 @@ extension (state: State)
     *   turn state.
     */
   def goToTurn(): State =
-    println("DEBUG: GOING TO TURN")
+    Logger.debug("GOING TO TURN")
     state.addCommunal(4).nextPhase().cleanupNextPhase()
 
   /** Returns river state.
@@ -597,7 +603,7 @@ extension (state: State)
     *   river state.
     */
   def goToRiver(): State =
-    println("DEBUG: GOING TO RIVER")
+    Logger.debug("GOING TO RIVER")
     state.addCommunal(5).nextPhase().cleanupNextPhase()
 
   /** Returns state cleaned up.
@@ -627,7 +633,7 @@ extension (state: State)
       throw IllegalArgumentException("State has too many communal cards.")
     else
       val cardsToAdd = outputCommunalCardLength - communalCards.length
-      println("INFO : adding " + cardsToAdd + " cards to the communal cards.")
+      Logger.info("adding " + cardsToAdd + " cards to the communal cards.")
 
       val newDeck = deck.drop(cardsToAdd)
       val newCommunalCards =
@@ -646,7 +652,12 @@ extension (state: State)
     *   state after a round.
     */
   def transitionRound(): State =
-    if state.gameInfo.roundNumber >= state.gameConfig.maxRound || state.setStatus().gameInfo.players.count(_.isPlaying()) <= 2  then
+    if state.gameInfo.roundNumber >= state.gameConfig.maxRound || state
+        .setStatus()
+        .gameInfo
+        .players
+        .count(_.isPlaying()) <= 2
+    then
       // game is ended
       state.endGame()
     else
@@ -657,7 +668,7 @@ extension (state: State)
         .setBeginOfRoundOrder()
         .nextPhase()
         .withNoBetContributionPlayers()
-        .withNoPlayersTalked() //this might be useless, but still we never know
+        .withNoPlayersTalked()
         .populateShuffledDeck()
         .distributeCards()
         .resetFlop()
@@ -665,8 +676,6 @@ extension (state: State)
         .executeBlinds()
         .setMinRaise()
         .addLog("Started new round")
-
-
 
   /** Returns state with number of rounds increased.
     *
@@ -705,29 +714,40 @@ extension (state: State)
     *   state with all blinds executed.
     */
   def executeBlinds(): State =
-   ({ 
-    val players = state.gameInfo.players
-    val smallBlind = state.gameConfig.smallBlind
-    val bigBlind = state.gameConfig.bigBlind
+    ({
+      val players = state.gameInfo.players
+      val smallBlind = state.gameConfig.smallBlind
+      val bigBlind = state.gameConfig.bigBlind
 
-    val updatedPlayers = players.map(player =>
-      player.getRole() match
-        case SmallBlind =>
-          if player.getMoney() < smallBlind then player.withStatus(Status.Spectating) else
-            player.updateBetAmount(smallBlind).updateMoney(-smallBlind).updatePotContribution(smallBlind)
+      val updatedPlayers = players.map(player =>
+        player.getRole() match
+          case SmallBlind =>
+            if player.getMoney() < smallBlind then
+              player.withStatus(Status.Spectating)
+            else
+              player
+                .updateBetAmount(smallBlind)
+                .updateMoney(-smallBlind)
+                .updatePotContribution(smallBlind)
 
-        case BigBlind =>
-          if player.getMoney() < bigBlind then player.withStatus(Status.Spectating) else
-            player.updateBetAmount(bigBlind).updateMoney(-bigBlind).updatePotContribution(bigBlind)
+          case BigBlind =>
+            if player.getMoney() < bigBlind then
+              player.withStatus(Status.Spectating)
+            else
+              player
+                .updateBetAmount(bigBlind)
+                .updateMoney(-bigBlind)
+                .updatePotContribution(bigBlind)
 
-        case _ => player
+          case _ => player
       )
 
-    val gameInfoUpdated = state.gameInfo.copy(players = updatedPlayers)
-    state.copy(gameInfo = gameInfoUpdated)
+      val gameInfoUpdated = state.gameInfo.copy(players = updatedPlayers)
+      state.copy(gameInfo = gameInfoUpdated)
 
-   }).ensuring(newState => newState.gameInfo.players.length == state.gameInfo.players.length)
-
+    }).ensuring(newState =>
+      newState.gameInfo.players.length == state.gameInfo.players.length
+    )
 
   /** Returns state with communal cards reset.
     *
@@ -743,18 +763,13 @@ extension (state: State)
 
   /** Returns state with a sentence added to the log.
     *
-    * @param str
+    * @param entry
     *   a sentence.
     * @return
     *   state with a sentence added to the log.
     */
-  def addLog(str: String): State =
-    val stateLog = state.gameInfo.logs
-    val updatedLog = stateLog :+ str
-
-    val gameInfoUpdated = state.gameInfo.copy(logs = updatedLog)
-
-    state.copy(gameInfo = gameInfoUpdated)
+  def addLog(entry: String): State =
+    state.copy(gameInfo = state.gameInfo.addLogGameInfo(entry))
 
   /** Returns state with the minimum raise set. (Always big blind).
     *
@@ -774,7 +789,9 @@ extension (state: State)
     *   true if all players have talked, else false.
     */
   def hasEveryoneTalked: Boolean =
-    state.gameInfo.players.filter(_.isOnlyPlaying()).forall(player => player.hasTalked())
+    state.gameInfo.players
+      .filter(_.isOnlyPlaying())
+      .forall(player => player.hasTalked())
 
   /** Returns true if everyone has called/bet same amount, else false.
     *
@@ -784,15 +801,15 @@ extension (state: State)
   def hasEveryoneBettedSameAmount: Boolean =
     val callAmount = state.getCallAmount()
     val betAmounts = state.gameInfo.players
-      .map(player => if player.isOnlyPlaying() then player.getBetAmount() else callAmount)
+      .map(player =>
+        if player.isOnlyPlaying() then player.getBetAmount() else callAmount
+      )
 
-    println("DEBUG: BET AMOUNTS -> " + betAmounts)
+    Logger.debug("BET AMOUNTS -> " + betAmounts)
     betAmounts.forall(bet => bet == callAmount)
 
-
   /** Returns state with end game phase.
-    * @todo
-    *   logs
+    *
     * @return
     *   state at end game.
     */
@@ -800,261 +817,3 @@ extension (state: State)
     state.copy(
       gamePhase = EndGame
     )
-
-
-extension (gameInfo: GameInfo)
-
-  /** Returns list of players that are still playing (all in included).
-    *
-    * @return
-    *   list of players that are still playing.
-    */
-  def getAllPlayingPlayers: List[PlayerInfo] =
-    gameInfo.players.filter(player => player.isPlaying())
-
-
-  /** Returns list of players that are only playing.
-    *
-    * @return
-    *   list of players that are only playing.
-    */
-  def getAllOnlyPlayingPlayers: List[PlayerInfo] =
-    gameInfo.players.filter(player => player.isOnlyPlaying())
-
-  /** Returns gameInfo with players turn rotated.
-    *
-    * @return
-    *   gameInfo with players turn rotated.
-    */
-  def rotatePlayerTurnInternal(): GameInfo = //TODO check players that are not playing
-    gameInfo.copy(players = {
-      val oldPlayers = gameInfo.players
-      val playersUpdated = oldPlayers.drop(1).appended(oldPlayers.head)
-      println("DEBUG: rotatePlayerTurnInternal : " + playersUpdated)
-      playersUpdated
-    })
-
-  /** Returns gameInfo with players role rotated. Simply put, new dealers, small
-    * blind, big blind assigned. Makes sure to skip players not playing.
-    *
-    * @return
-    *   gameInfo with players role rotated
-    */
-  def rotatePlayerRolesInternalV1(): GameInfo =
-
-    val players = gameInfo.players
-
-    println("DEBUG: rotatePlayerRoles before players: " + players)
-
-    require(players.size >= 3)
-    val playersWithIndex = players.zipWithIndex
-
-    val lastBigBlind = playersWithIndex.find((player, _) => player.isBigBlind())
-
-    val newPlayers = lastBigBlind match
-      case Some((bigBlindPlayer, indexBB)) =>
-        val indexOfBigBlind = indexBB
-
-        playersWithIndex.map((player, index) =>
-          if player.isPlaying() then
-            player.getRole() match
-              case Dealer =>
-                player.withRole(
-                  players(Math.floorMod((index - 1), players.size)).getRole()
-                )
-              case SmallBlind => player.withRole(Dealer)
-              case BigBlind   => player.withRole(SmallBlind)
-              case Normal =>
-                if index == ((indexOfBigBlind + 1) % players.length) then
-                  player.withRole(BigBlind)
-                else player
-          else player
-        )
-
-      case None => throw Exception("No Big Blind in the game ??")
-
-      println("DEBUG: rotatePlayerRoles after players (result): " + newPlayers)
-    gameInfo.copy(players = newPlayers)
-
-  /** Returns gameInfo with players role rotated. Simply put, new dealers, small
-    * blind, big blind assigned. Makes sure to skip players not playing.
-    *
-    * @return
-    *   gameInfo with players role rotated.
-    */
-  def rotatePlayerRolesInternal(): GameInfo =
-    val players = gameInfo.players
-    val playingPlayers = players.filter(player => player.getStatus() != Status.Spectating)
-    val spectatingPlayers = players.diff(playingPlayers).map(player => player.withRole(Normal))
-    val trickyRoles = List(Role.Dealer, Role.SmallBlind, Role.BigBlind)
-    val normal = List.tabulate(playingPlayers.size - 3)(i => Role.Normal)
-    val roles = trickyRoles ++ normal
-    val queuePlayers = Queue(playingPlayers*)
-    val queueRotated = queuePlayers.enqueue(queuePlayers.dequeue())
-    val newPlayingPlayers = queueRotated.zip(roles).map((player,role) => player.withRole(role)).toList
-    val newPlayers = newPlayingPlayers ++ spectatingPlayers
-    gameInfo.copy(players = newPlayers).ensuring(gameInfo.players.size == players.size)
-
-  /** Returns game info with players order of the round. For preflop player
-    * after big blind starts. For flop, turn, river blind starts.
-    *
-    * @TODO
-    *   since we execute blinds, begin of round is always small blind no?
-    * @TODO
-    *   players playing?
-    * @return
-    *   gameInfo with players order of the round.
-    */
-  def setBeginOfRoundOrderInternal(state: State): GameInfo =
-    val players = gameInfo.players
-
-    println("DEBUG: setBeginOfRoundOrder, players before set: " + players)
-
-    val smallBlindPosition = players.indexWhere(player => player.isSmallBlind())
-    val bigBlindPosition = players.indexWhere(player => player.isBigBlind())
-
-    assert(smallBlindPosition >= 0, "No Small Blind?!")
-    assert(bigBlindPosition >= 0, "No Big Blind?!")
-
-    state.gamePhase match
-      case PreFlop | EndRound => {
-        val playersUpdated = 
-          players.drop((bigBlindPosition + 1) % players.size) ++ players.take(
-            (bigBlindPosition + 1) % players.size
-          )
-        
-        println("DEBUG: SetBeginOfRoundOrderInternal after players at " + state.gamePhase + " : " + playersUpdated)
-
-        gameInfo.copy(players = playersUpdated)
-
-      }.ensuring(g => g.players.size == players.size, "Preflop | EndRound should not drop any players")
-
-      case Flop | Turn | River  => {
-
-        val playersUpdated =
-          players.drop(smallBlindPosition) ++ players.take(smallBlindPosition)
-      
-        println("DEBUG: SetBeginOfRoundOrderInternal after players at " + state.gamePhase + " : " + playersUpdated)
-
-        gameInfo.copy(players = playersUpdated)
-        
-          
-        }.ensuring(g => g.players.size == players.size, "Flop | Turn |River should not drop any players")
-
-      case EndGame =>
-        throw Exception(
-          "no order needed for endGame"
-        ) // should never happen
-
-
-
-  def createSidePots(): List[(List[UserId], Money)] =
-    val players = gameInfo.players
-
-    val contributions: List[(UserId, Money)] = players.map(player => (player.getUserId(), player.getPotContribution()))
-
-    val sortedContributions = contributions.sortBy((_, contribution) => contribution)
-
-    def newSidePot(remainingMoney: List[(UserId, Money)]): List[(List[UserId], Money)] =
-
-      val zeroFiltered = remainingMoney.filter((_, contribution) => contribution > 0)
-
-      if zeroFiltered.isEmpty then Nil else
-
-        val smallestContr = zeroFiltered.head._2
-        val thisPotPlayers = zeroFiltered.map((userId, _) => userId)
-
-        val thisPotSize = smallestContr * zeroFiltered.size
-
-        val remainingUpdated =
-          remainingMoney.map((userId, contr) => if contr > 0 then (userId, contr - smallestContr) else (userId, contr) )
-
-        (thisPotPlayers, thisPotSize) :: newSidePot(remainingUpdated.sortBy(_._2))
-
-    newSidePot(sortedContributions)
-
-  def distributePotInternal(): GameInfo =
-
-    val sidePots = createSidePots()
-
-    println("DEBUG: Side POTS " + sidePots)
-    val players = gameInfo.players
-
-    val communalCards = gameInfo.communalCards
-
-    val winnersWithMoneyWon = sidePots.map(pot =>
-      val (potPlayersId, potSize) = pot
-
-      val playersInPot = players.filter(player => potPlayersId.contains(player.getUserId()))
-
-
-      //find winner only considers players playing
-      val winnersAndHand = CardHelper.findWinner(playersInPot, communalCards)
-      val winners = winnersAndHand.map(w => w._1)
-      
-      println("DEBUG: Winner is " + winners)
-      (winners.map(_.getUserId()), potSize)
-
-    )
-
-    val winnersAndHand = CardHelper.findWinner(players, communalCards)
-
-    println("DEBUG: Winners with money won! " + winnersWithMoneyWon)
-    
-    val playersEarnings = winnersWithMoneyWon.foldLeft(Map[UserId, (Money, Option[HandRank])]())(
-      (acc, winWithMoney) =>
-        val (winnersId, potSize) = winWithMoney
-        //case that there a no winners (a side pot where everyone folded)
-        if winnersId.nonEmpty then
-          val moneyWon = potSize / winnersId.size
-          winnersId.foldLeft(acc)((newAcc, winnerId) =>
-            newAcc.updated(winnerId, 
-              (
-                (newAcc.getOrElse(winnerId, (0,None))._1 + moneyWon), 
-                winnersAndHand.find(
-                    p => p._1.getUserId() == winnerId).get._2
-            )
-          )
-        )
-        else 
-          acc
-    )
-
-
-    val playersUpdated = players.map(player =>
-      val moneyWon = playersEarnings.getOrElse(player.getUserId(), (0,None))._1
-      player.updateMoney(moneyWon)
-    )
-    gameInfo.copy(players = playersUpdated, pot = 0)
-      .addWinningLogs(playersEarnings)
-
-
-
-  def addWinningLogs(playersEarnings: Map[UserId,(Money, Option[HandRank])])=
-    val winningLogs = playersEarnings.foldLeft(Nil)( (rest, e) => {
-        val (user, (money, hand)) = e
-        if money <= 0 then
-          rest
-        else
-          if hand.isEmpty then
-            (user + " won " + money + "$ !!!") :: rest
-          else
-            (user + " won " + money + "$ !!! With " + hand.get.toString) :: rest
-
-    })
-
-    gameInfo.copy(
-      logs = gameInfo.logs ++ winningLogs
-      )
-
-
-def doWeShowWinnerCards(players:List[PlayerInfo]):Boolean=
-  if players.count(p => p.isPlaying()) == 1 then
-    false
-  else
-    true
-
-
-
-
-

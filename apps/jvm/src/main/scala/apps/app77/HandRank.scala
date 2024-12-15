@@ -119,16 +119,18 @@ case class Straight(straightHighNumber: Int) extends HandRank {
     "straight ending with " + cardsToString(straightHighNumber)
 }
 
-case class Flush(flushNumbers: List[Int]) extends HandRank {
+case class Flush(flushNumbers: List[Int], flushSuit: Suit) extends HandRank {
   override def rank: Int = 6
 
   override def compareTie(that: HandRank): Int =
     that match
-      case Flush(otherFlushNumbers) =>
+      case Flush(otherFlushNumbers, _) =>
         compareHighCard(flushNumbers, otherFlushNumbers)
 
       case _ =>
         throw new IllegalArgumentException("HandRank are not the same?!")
+
+  override def toString(): String = "flush of " + flushSuit.toString().toLowerCase() +"s \n " + flushNumbers.map(cardsToString(_)).mkString(", ")
 }
 
 case class FullHouse(tripletNumber: Int, pairNumber: Int) extends HandRank {
@@ -167,31 +169,31 @@ case class FourOfAKind(quadNumber: Int, kicker: Int) extends HandRank {
   ) + ", kicker " + cardsToString(kicker)
 }
 
-case class StraightFlush(straightFlushHighNumber: Int) extends HandRank {
+case class StraightFlush(straightFlushHighNumber: Int, flushSuit: Suit) extends HandRank {
   override def rank: Int = 9
 
   override def compareTie(that: HandRank): Int =
     that match
-      case StraightFlush(otherStraightFlushHighNumber) =>
+      case StraightFlush(otherStraightFlushHighNumber, _) =>
         straightFlushHighNumber.compare(otherStraightFlushHighNumber)
 
       case _ =>
         throw new IllegalArgumentException("HandRank are not the same?!")
 
   override def toString(): String =
-    "straight flush ending with " + cardsToString(straightFlushHighNumber)
+    "straight flush of " + flushSuit.toString().toLowerCase() + "s ending with " + cardsToString(straightFlushHighNumber)
 }
 
-case class RoyalFlush() extends HandRank {
-  override def rank: Int = 10
+case class RoyalFlush(flushSuit: Suit) extends HandRank {
+  override def rank: Int = 10 
 
   override def compareTie(that: HandRank): Int =
     that match
-      case RoyalFlush() => 0
+      case RoyalFlush(_) => 0
       case _ =>
         throw new IllegalArgumentException("HandRank are not the same?!")
 
-  override def toString(): String = " royal flush!!!"
+  override def toString(): String = " royal flush of " + flushSuit.toString().toLowerCase() + "s"
 }
 
 /** Compares a list of cards by another list of cards
@@ -286,8 +288,8 @@ object HandRank:
 
         findStraight(flushWithMaybeAce) match {
           case Some(highNumber) =>
-            if highNumber == 14 then return RoyalFlush()
-            else return StraightFlush(highNumber)
+            if highNumber == 14 then return RoyalFlush(flushSuit)
+            else return StraightFlush(highNumber, flushSuit)
           case _ =>
         }
 
@@ -317,7 +319,7 @@ object HandRank:
         val flushNumbers =
           flushCards.map((_, number, _) => number).sorted.reverse
 
-        return Flush(flushNumbers.take(5))
+        return Flush(flushNumbers.take(5), flushSuit)
 
       case _ =>
 
@@ -364,8 +366,11 @@ object HandRank:
   *   ending number of a straight if found, else None.
   */
 def findStraight(numbers: List[Int]): Option[Int] =
-  val straights = numbers.distinct.sorted.reverse.sliding(5)
-  straights.collectFirst {
-    case possibleStraight if (possibleStraight(0) - possibleStraight(4) == 4) =>
-      possibleStraight(0)
-  }
+  val (straights, testStraigths) = numbers.distinct.sorted.reverse.sliding(5).duplicate
+  if testStraigths.toList.forall(_.size >= 5) then
+    straights.collectFirst {
+      case possibleStraight if (possibleStraight(0) - possibleStraight(4) == 4) =>
+        possibleStraight(0)
+    }
+  else 
+    None
