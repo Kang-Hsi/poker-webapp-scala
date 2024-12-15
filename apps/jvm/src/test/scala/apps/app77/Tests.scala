@@ -93,11 +93,11 @@ class Tests extends WebappSuite[Event, State, View]:
   /** Test encoding and decoding of events */
   test("Encoding and decoding for bet event") {
     val betEvent = Event.Bet(100)
-    println("BetEvent : " + betEvent)
+    //println("BetEvent : " + betEvent)
     val json = wire.eventFormat.encode(betEvent)
-    println("Encoded : " + json)
+    //println("Encoded : " + json)
     val decode = wire.eventFormat.decode(json).get
-    println("Decoded : " + decode)
+    //println("Decoded : " + decode)
     assert(decode == betEvent, s"Expected: $betEvent, got: $decode")
   }
 
@@ -105,44 +105,44 @@ class Tests extends WebappSuite[Event, State, View]:
   test("Encoding and decoding for check event") {
     val checkEvent = Event.Check()
     val json = wire.eventFormat.encode(checkEvent)
-    println(json)
+    //println(json)
     val decode = wire.eventFormat.decode(json).get
-    println(decode)
+    //println(decode)
     assert(decode == checkEvent, s"Expected: $checkEvent, got: $decode")
   }
 
   test("Encoding and decoding for playersInfo with no cards") {
     val playerInfo = createInitialPlayerInfo(USER_IDS)
     //println("playyerInfo: "+ playerInfo(0))
-    val json = viewFormatHelpers.encodePlayerInfo(playerInfo(0))
+    val json = ViewFormatHelpers.encodePlayerInfo(playerInfo(0))
     //println("JSON playerInfo"+ json)
-    val decode = viewFormatHelpers.decodePlayerInfo(json).get
+    val decode = ViewFormatHelpers.decodePlayerInfo(json).get
     //println("decoded playerInfo" + decode)
     assertEquals(decode, playerInfo(0))
   }
   test("Decode option and encode option") {
     val hand = Some(Set((Suit.Heart, 10, "10 of heart"),(Suit.Diamond, 6, "6 of diamond")))
     //println("Hand : " + hand)
-    val json = hand.encodeOption(viewFormatHelpers.encodeHand(_))
+    val json = hand.encodeOption(ViewFormatHelpers.encodeHand(_))
     //println("JSON : " + json)
-    val decode = json.decodeOption(viewFormatHelpers.decodeHand(_)).get
+    val decode = json.decodeOption(ViewFormatHelpers.decodeHand(_)).get
     //println("Decode : " + decode)
     assertEquals(decode, hand)
   }
   test("Encoding and decoding for playersInfo with cards") {
     val playerInfo = createInitialPlayerInfo(USER_IDS)(0).withOptionHand(Some(Set((Suit.Heart, 10, "10 of heart"),(Suit.Diamond, 6, "6 of diamond"))))
-    println("playyerInfo: "+ playerInfo)
-    val json = viewFormatHelpers.encodePlayerInfo(playerInfo)
-    println("JSON playerInfo"+ json)
-    val decode = viewFormatHelpers.decodePlayerInfo(json).get
-    println("decoded playerInfo" + decode)
+    //println("playyerInfo: "+ playerInfo)
+    val json = ViewFormatHelpers.encodePlayerInfo(playerInfo)
+    //println("JSON playerInfo"+ json)
+    val decode = ViewFormatHelpers.decodePlayerInfo(json).get
+    //println("decoded playerInfo" + decode)
     assertEquals(decode, playerInfo)
   }
 
   test("Encoding and decoding fro gamePhase") {
     val gamePhase = GamePhase.EndGame
-    val json = viewFormatHelpers.encodeGamePhase(gamePhase)
-    val decode = viewFormatHelpers.decodeGamePhase(json).get
+    val json = ViewFormatHelpers.encodeGamePhase(gamePhase)
+    val decode = ViewFormatHelpers.decodeGamePhase(json).get
     assertEquals(decode, gamePhase)
   }
 
@@ -157,20 +157,20 @@ class Tests extends WebappSuite[Event, State, View]:
     val gameConfig = new GameConfig(15, 10, 20)
     val gamePhase = GamePhase.EndRound
     val view = new View(gameInfo, gameConfig, gamePhase)
-    println("View : " + view)
+    //println("View : " + view)
     val json = wire.viewFormat.encode(view)
-    println("JSON view : " + json)
+    //println("JSON view : " + json)
     val decode = wire.viewFormat.decode(json).get
-    println("Decode : " + decode)
+    //println("Decode : " + decode)
     assertEquals(decode, view)
   }
   test("Encoding & Decoding for gameInfo") {
     val playerInfo = createInitialPlayerInfo(USER_IDS)
     val gameInfo = createInitialGameInfo(playerInfo)
     //println("GameInfo view:**********")
-    val json = viewFormatHelpers.encodeGameInfo(gameInfo)
+    val json = ViewFormatHelpers.encodeGameInfo(gameInfo)
     //println("JSON view : " + json)
-    val decode = viewFormatHelpers.decodeGameInfo(json).get
+    val decode = ViewFormatHelpers.decodeGameInfo(json).get
     //println("Decode: " + decode)
     assertEquals(decode, gameInfo)
 

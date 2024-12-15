@@ -49,7 +49,7 @@ enum Role:
   case Normal
 
 given RoleOrd: Ordering[Role] with
-  def compare(a: Role, b: Role) =
+  override def compare(a: Role, b: Role) =
     (a,b) match
       case (Role.Dealer,_) => -1
       case (_, Role.Dealer) => 1
@@ -59,11 +59,13 @@ given RoleOrd: Ordering[Role] with
       case (_ , Role.BigBlind) => 1
       case (Role.Normal, Role.Normal) => 0
 
+/* If a player has talked */
 type hasTalked = Boolean
 
+/* The amount a player contributed to a pot */
 type potContribution = Money
 
-/* Complete nformation of a player */
+/* Complete information of a player */
 type PlayerInfo = (UserId, Money, Role,
                   Status, Option[PlayerHand],
                   BetAmount, hasTalked, potContribution
@@ -74,15 +76,30 @@ type PlayerInfo = (UserId, Money, Role,
 enum Event:
   case Check()
   case Fold()
-  case Bet(amount:Money) //used also for Call !!!!!!!
+  case Bet(amount:Money) //also used for call
+  case Restart()
 
 
+/**
+  * A game configuration.
+  *
+  * @param maxRound the maximum number of rounds the game will run.
+  * @param smallBlind the small blind amount.
+  * @param bigBlind the big blind amount.
+  */
 case class GameConfig(
   maxRound: Round,
   smallBlind: Int,
   bigBlind: Int
 )
 
+/**
+  * A view of the poker game.
+  *
+  * @param gameInfo the game information.
+  * @param gameConfig the game configuration.
+  * @param gamePhase the game phase.
+  */
 case class View (
   gameInfo: GameInfo,
   gameConfig: GameConfig,
@@ -106,13 +123,20 @@ case class GameInfo(
   roundNumber : Round,
   communalCards : List[Card],
   pot: Pot,
-  logs: List[String],//Logs with last entry being the most recent action
-  callAmount: Money, //Useless
+  logs: List[String], //Logs with last entry being the most recent action
+  callAmount: Money, 
   minRaise: Money,
-  maxRaise: Money, //Useless but maybe useful on type Player?
+  maxRaise: Money, 
 )
 
-
+/**
+  * A state of a poker game.
+  *
+  * @param gamePhase the game phase.
+  * @param gameInfo the game information.
+  * @param deck the deck of cards.
+  * @param gameConfig the game configuration.
+  */
 case class State(
   gamePhase: GamePhase,
   gameInfo: GameInfo,
@@ -120,6 +144,9 @@ case class State(
   gameConfig: GameConfig
   )
 
+/**
+  * The phases of a poker game.
+  */
 enum GamePhase:
   case PreFlop
   case Flop

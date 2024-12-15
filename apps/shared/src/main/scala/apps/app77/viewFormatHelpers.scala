@@ -5,7 +5,7 @@ import ujson.Value
 
 
 
-object viewFormatHelpers {
+object ViewFormatHelpers {
     def encodeSuit(suit : Suit) : Value = suit match
       case Suit.Heart => ujson.Str("heart")
       case Suit.Diamond => ujson.Str("diamond")

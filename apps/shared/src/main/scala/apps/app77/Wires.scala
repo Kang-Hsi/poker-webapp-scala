@@ -3,6 +3,7 @@ package apps.app77
 import cs214.webapp.*
 import scala.util.{Failure, Success, Try}
 import ujson.Value
+import ViewFormatHelpers.*
 
 
 object Wire extends AppWire[Event, View]:
@@ -27,6 +28,7 @@ object Wire extends AppWire[Event, View]:
       case Check() => ujson.Obj("type" -> "check")
       case Fold()  => ujson.Obj("type" -> "fold")
       case Bet(amount) => ujson.Obj("type" -> "bet", "amount" -> ujson.Num(amount))
+      case Restart() => ujson.Obj("type" -> "restart")
 
     /**
       * Decodes a JSON object into an Event instance.
@@ -45,6 +47,7 @@ object Wire extends AppWire[Event, View]:
         case "bet"   =>
           val amount = obj("amount").num.toInt
           Event.Bet(amount)
+        case "restart" => Event.Restart()
     }
 
   override object viewFormat extends WireFormat[View] :
@@ -58,9 +61,9 @@ object Wire extends AppWire[Event, View]:
       * @return the JSON representation of the view
       */
     override def encode(view: View): Value = ujson.Arr(
-      viewFormatHelpers.encodeGameInfo(view.gameInfo),
-      viewFormatHelpers.encodeGameConfig(view.gameConfig),
-      viewFormatHelpers.encodeGamePhase(view.gamePhase)
+      encodeGameInfo(view.gameInfo),
+      encodeGameConfig(view.gameConfig),
+      encodeGamePhase(view.gamePhase)
       )
     /**
       * Decodes a JSON array into a View instance.
@@ -73,9 +76,9 @@ object Wire extends AppWire[Event, View]:
       */
     override def decode(json: Value): Try[View] = Try{
       val arr = json.arr
-      val gameInfo = viewFormatHelpers.decodeGameInfo(arr(0)).get
-      val gameConfig = viewFormatHelpers.decodeGameConfig(arr(1)).get
-      val gamePhase = viewFormatHelpers.decodeGamePhase(arr(2)).get
+      val gameInfo = decodeGameInfo(arr(0)).get
+      val gameConfig = decodeGameConfig(arr(1)).get
+      val gamePhase = decodeGamePhase(arr(2)).get
       View(gameInfo, gameConfig, gamePhase)
     }
 
