@@ -49,9 +49,9 @@ object Wire extends AppWire[Event, View]:
           Event.Bet(amount)
         case "restart" => Event.Restart()
     }
-    
+
   /**
-    * Object provided to encode and decode an event.
+    * Object provided to encode and decode an view.
     */
   override object viewFormat extends WireFormat[View] :
 
