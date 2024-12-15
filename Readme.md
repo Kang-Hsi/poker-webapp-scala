@@ -37,7 +37,7 @@ the following resources for learning and implementing CSS and HTML in this proje
 
 #### CSS Learning Resources:
 - **[MDN Web Docs (Mozilla Developer Network)](https://developer.mozilla.org/en-US/docs/Web/CSS)**: A comprehensive and authoritative reference for web developers, providing in-depth tutorials on the basics of CSS as well as advanced topics.
-- **[CSS Débutant](https://css.malven.co/)**: A French website tailored for beginners seeking to learn CSS, featuring detailed courses and tutorials.
+- **[CSS Beginnners](https://grid.malven.co/)**: A website providing exemples of css code with a picture of the result.
 - **[Letecode](https://letecode.com/)**: Offers a complete CSS tutorial for beginners, covering everything from CSS fundamentals to advanced techniques. 
 - **[Uiverse.io CSS Animation](https://uiverse.io/ayman-ashine/rare-otter-33)**: Implemented part of the code from this specific source for the header animation "Poker Game".
 
