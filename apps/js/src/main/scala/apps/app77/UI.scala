@@ -28,20 +28,20 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
    * This wire connects the client-side application to the server-side logic,
    * enabling bidirectional communication. It ensures that events and views
    * are transmitted correctly between the client and server.
-   * 
+   *
    * @return An instance of `AppWire` specialized for `Event` and `View` types.
    */
   override def wire: AppWire[Event, View] = apps.app77.Wire
 
   /**
    * Renders the view based on the current game phase.
-   * 
-   * This method dynamically determines the appropriate interface to render 
+   *
+   * This method dynamically determines the appropriate interface to render
    * depending on the game's phase. It supports three main phases:
    * - `EndGame`: Displays the final results and the winner(s) of the game.
    * - `EndRound`: Shows a temporary interface highlighting the round's winner.
    * - Other phases: Renders the interface for an ongoing round.
-   * 
+   *
    * @param userId The identifier of the current user (client).
    * @param view The current state of the game, including phase and player information.
    * @return A `Frag` representing the rendered interface for the current game phase.
@@ -50,12 +50,12 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     view.gamePhase match
       case GamePhase.EndGame => endGameRender(view)
       case GamePhase.EndRound => endRoundRender(view)
-      case _ => roundRender(userId, view) 
+      case _ => roundRender(userId, view)
   }
 
   /**
    * Renders the temporary interface for the end of a round.
-   * 
+   *
    * Extracts the round winner's name and the amount won from the game logs.
    * Displays a temporary styled interface before re-rendering the game view.
    *
@@ -63,10 +63,10 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
    * @return A `Frag` representing the temporary end-round interface.
    */
   private def endRoundRender(view : View) = {
-    val message = view.gameInfo.logs.last
-    val messageParts = message.split(" ")
-    val winnerName = messageParts(0)
-    val amountWon = messageParts(2)
+    val winners = extractWinnersFromLogs(view.gameInfo.logs)
+    val names = winners.map(_._1).mkString(", ")
+    val amounts = winners.map { case (name, amount) => s"$name: $$amount" }.mkString(", ")
+
     val tempInterface = div(
       cls := "end-round-container",
       h2(cls := "end-round-title", "🏆 Round Winner 🏆"),
@@ -74,13 +74,13 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
         cls := "winner-info",
         p(
           cls := "winner-name",
-          span("Winner: "), 
-          span(cls := "highlight", s"$winnerName")
+          span(if (winners.length == 1) "Winner: " else "Winners: "),
+          span(cls := "highlight", names)
         ),
         p(
           cls := "winner-amount",
-          span("Amount Won: "), 
-          span(cls := "highlight", s"$amountWon")
+          span("Amount Won: "),
+          span(cls := "highlight", amounts)
         )
       )
     )
@@ -90,10 +90,10 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
   /**
    * Renders the interface for the end of the game.
-   * 
-   * Determines the player(s) with the highest total money from the game state 
+   *
+   * Determines the player(s) with the highest total money from the game state
    * and displays their names and total winnings in a styled, congratulatory view.
-   * 
+   *
    * @param view The current game state containing player information and their money amounts.
    * @return A `Frag` representing the end-game interface with the winner(s) and total money.
    */
@@ -111,7 +111,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     // Construct the end-game interface
     div(
       cls := "winner-container-endgame",
-      h1(cls := "winner-title-endgame", "🎉 Congratulations! 🎉"), 
+      h1(cls := "winner-title-endgame", "🎉 Congratulations! 🎉"),
       div(
         cls := "winner-info-endgame",
         h2(cls := "winner-name-endgame", s"Winner(s): $winners"),
@@ -128,11 +128,11 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
   /**
    * Renders the interface for a single round of the game.
-   * 
-   * Displays the round number, game header, player roles, communal cards, 
-   * player's hand, actions, and logs. This method dynamically applies styles 
+   *
+   * Displays the round number, game header, player roles, communal cards,
+   * player's hand, actions, and logs. This method dynamically applies styles
    * to indicate the current player's turn.
-   * 
+   *
    * @param userId The identifier of the current user (client).
    * @param view The current state of the game containing player and round information.
    * @return A `Frag` that combines all components of the round interface.
@@ -181,10 +181,10 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
   /**
    * Retrieves the client player's information from the game state.
-   * 
+   *
    * If the client is no longer in the game (e.g., has lost), assigns a default
    * empty hand to the client and returns the player's information.
-   * 
+   *
    * @param view The current game state containing the list of players.
    * @return The client player's information as a `PlayerInfo`.
    */
@@ -204,10 +204,10 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
   /**
    * Generates the text for the "Call" button based on the game state.
-   * 
+   *
    * Determines the appropriate action label ("ALLIN!!", "Check", or "Call <amount>$")
    * by comparing the client's current money, call amount, and bet amount.
-   * 
+   *
    * @param view The current game state containing player and game details.
    * @return A `String` representing the text to display on the "Call" button.
    */
@@ -232,11 +232,11 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
   /**
    * Retrieves the highest call amount placed by any player in the current round.
-   * 
+   *
    * This method examines all players in the game to find the maximum bet amount
    * contributed during the ongoing round. It ensures the correct amount required
    * for the current player to match or exceed to stay in the round.
-   * 
+   *
    * @param view The current game state containing player details and contributions.
    * @return The highest call amount (`Money`) in the current game state.
    */
@@ -251,11 +251,11 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
   /**
    * Renders the general information table for the game, including player roles, names,
    * money, and bet amounts.
-   * 
+   *
    * This method creates an HTML table that displays the relevant details for all players.
    * It uses a dynamic approach to assign CSS classes for styling based on the player's
    * status and highlights the current player with additional styling.
-   * 
+   *
    * @param view The current game state containing player information and configurations.
    * @return A `Frag` representing the table of player details.
    */
@@ -272,7 +272,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
         for ((header, rowData) <- headers.zipWithIndex) // Iterates through each header
         yield tr(
           td(b(header)), // Displays the header in bold
-          for ((userId, money, role, status, _, betAmount, hasTalked, potContribution) <- orderedListPlayers) 
+          for ((userId, money, role, status, _, betAmount, hasTalked, potContribution) <- orderedListPlayers)
           yield td(
             cls := s"${if (status == Status.Spectating) "folded-player" else ""}", // Applies CSS class for spectating players
             if (rowData == 0) { // Handles role-specific rendering
@@ -309,11 +309,11 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
   /**
    * Renders the game logs as a list of messages.
-   * 
+   *
    * This method displays the game logs in reverse order, with the most recent log
    * message appearing at the top. The logs are styled as a scrollable list to accommodate
    * longer game histories.
-   * 
+   *
    * @param view The current game state containing the list of log messages.
    * @return A `Frag` representing the list of game logs displayed in a scrollable container.
    */
@@ -327,11 +327,11 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
   /**
    * Renders the action buttons (Fold, Call, Raise) for the player.
-   * 
-   * This method dynamically generates buttons based on the current game state. 
-   * It ensures the appropriate button states (enabled/disabled) and actions 
+   *
+   * This method dynamically generates buttons based on the current game state.
+   * It ensures the appropriate button states (enabled/disabled) and actions
    * depending on the player's turn, status, and available options.
-   * 
+   *
    * @param view The current game state containing player and action details.
    * @return A `Frag` containing the action buttons as HTML elements.
    */
@@ -395,11 +395,11 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
   /**
    * Renders the player's hand and balance, along with the communal pot.
-   * 
-   * Displays the cards in the player's hand, their current money balance, 
+   *
+   * Displays the cards in the player's hand, their current money balance,
    * and the communal pot in a well-structured table format.
    * The cards are styled differently based on their suit (red for Hearts/Diamonds, black for Spades/Clubs).
-   * 
+   *
    * @param view The current game state containing the player's information and communal pot.
    * @return A `Frag` containing the player's hand, balance, and pot as a table.
    */
@@ -454,22 +454,46 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
   }
 
   /**
+   * Extracts winners' names and the amounts they won from the logs after
+   * the most recent "Communal cards of the round" message.
+   *
+   * @param logs The list of game logs.
+   * @return A list of tuples containing (winner name, amount won).
+   */
+  private def extractWinnersFromLogs(logs: List[String]): List[(String, Int)] = {
+    // Find the index of the most recent "Communal cards of the round" message
+    val lastIndex = logs.lastIndexWhere(_.startsWith("Communal cards of the round"))
+
+    // Extract only logs after the most recent "Communal cards of the round"
+    val winnerLogs = logs.slice(lastIndex + 1, logs.length)
+
+    // Regex pattern to match "<winnerName> won <amount>$ !!!"
+    val winnerPattern = """(\w+)\s+won\s+(\d+)\$""".r
+
+    // Parse each log message and extract winners with amounts
+    winnerLogs.flatMap {
+      case winnerPattern(name, amount) => Some((name, amount.toInt)) // Extract name and amount
+      case _ => None // Ignore logs that don't match the pattern
+    }
+  }
+
+  /**
    * Renders the communal cards on the table.
-   * 
+   *
    * This method displays the cards currently shared among all players in the round.
    * Cards are styled based on their suit: red for Hearts and Diamonds, and black for Spades and Clubs.
    * Empty card slots (up to 5 total communal cards) are filled with placeholder cards.
-   * 
+   *
    * @param view The current game state containing communal cards information.
    * @return A `Frag` representing the communal cards display.
    */
   private def communalCardsRender(view: View) = {
     // Retrieve the list of communal cards from the game state
     val commCards = view._1.communalCards
-    
+
     // Create placeholder cards to fill up to 5 communal cards
     val emptyCards = List.fill(5 - commCards.size)((Suit.Spades, " 🂠 "))
-    
+
     // Combine existing communal cards with placeholders
     val cards = commCards.map(c => (c._1, c._3)) ++ emptyCards
 
@@ -487,12 +511,12 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
   }
   /**
    * Combines the base CSS styles with custom Poker Game interface styling.
-   * 
+   *
    * This method overrides the base CSS definitions with additional styles specific
    * to the Poker Game interface. These styles include animations, table layouts,
    * player indicators, communal card displays, and action buttons to provide a
    * rich user experience tailored for the game.
-   * 
+   *
    * The following features are defined:
    * - Styling for the poker game layout and player interactions.
    * - Animations for highlighting the active player's turn.
@@ -500,7 +524,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
    * - Styling for action buttons (Fold, Call, Raise) based on player state.
    * - Visual indicators for communal cards, player hand, and game logs.
    * - Special interface for end-round and end-game displays.
-   * 
+   *
    * @return A string containing all the CSS styles combined with the base styles.
    */
   override def css: String = super.css + """
@@ -699,7 +723,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     |
     | .card-container {
     |  display: flex;
-    |  justify-content: center; 
+    |  justify-content: center;
     |  align-items: center;
     |  background-color: white;
     |  border-radius: 5px;
@@ -747,13 +771,13 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     | .cardHand-black{
     |  text-align: center;
     |  display: inline-block;
-    |  padding: 10px; 
-    |  font-size: 6.5em; 
+    |  padding: 10px;
+    |  font-size: 6.5em;
     | }
     | .cardHand-red{
     |  text-align: center;
     |  display: inline-block;
-    |  padding: 10px; 
+    |  padding: 10px;
     |  font-size: 6.5em;
     |   color: #ff0000;
     | }
