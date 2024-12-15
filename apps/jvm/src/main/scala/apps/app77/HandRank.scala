@@ -366,8 +366,11 @@ object HandRank:
   *   ending number of a straight if found, else None.
   */
 def findStraight(numbers: List[Int]): Option[Int] =
-  val straights = numbers.distinct.sorted.reverse.sliding(5)
-  straights.collectFirst {
-    case possibleStraight if (possibleStraight(0) - possibleStraight(4) == 4) =>
-      possibleStraight(0)
-  }
+  val (straights, testStraigths) = numbers.distinct.sorted.reverse.sliding(5).duplicate
+  if testStraigths.toList.forall(_.size >= 5) then
+    straights.collectFirst {
+      case possibleStraight if (possibleStraight(0) - possibleStraight(4) == 4) =>
+        possibleStraight(0)
+    }
+  else 
+    None
