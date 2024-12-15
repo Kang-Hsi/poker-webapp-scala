@@ -199,7 +199,7 @@ extension (state: State)
 
         // shouldn't happen though
         if player.getMoney() < amount then
-          throw IllegalMoveException("Not enough money")
+          throw IllegalMoveException("Not enough money, to bet " + amount + " you need to have it.")
 
         val totalBet = player.getBetAmount() + amount
         val callAmount = state.getCallAmount()
