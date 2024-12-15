@@ -53,19 +53,32 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
       case _ => roundRender(userId, view)
   }
 
+
+ /**
+   * Extracts winners' names and the amounts they won from the logs after 
+   * the most recent "Communal cards of the round" message.
+   * 
+   * @param logs The list of game logs.
+   * @return A list of tuples containing (winner name, amount won).
+   */
+  private def extractWinnersFromLogs(logs: List[String]): String = {
+    // Find the index of the most recent "Communal cards of the round" message
+    val lastIndex = logs.lastIndexWhere(_.startsWith("Communal cards of the round"))
+    // Extract only logs after the most recent "Communal cards of the round"
+    val winnerLogs = logs.slice(lastIndex + 1, logs.length)
+    winnerLogs.mkString("\n")
+  }
   /**
    * Renders the temporary interface for the end of a round.
-   *
+   * 
    * Extracts the round winner's name and the amount won from the game logs.
    * Displays a temporary styled interface before re-rendering the game view.
    *
    * @param view The current game state containing logs and game details.
-   * @return A `Frag` representing the temporary end-round interface.
+   * @return A Frag representing the temporary end-round interface.
    */
   private def endRoundRender(view : View) = {
-    val winners = extractWinnersFromLogs(view.gameInfo.logs)
-    val names = winners.map(_._1).mkString(", ")
-    val amounts = winners.map { case (name, amount) => s"$name: $$amount" }.mkString(", ")
+    val winnersName = extractWinnersFromLogs(view.gameInfo.logs)
 
     val tempInterface = div(
       cls := "end-round-container",
@@ -74,19 +87,15 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
         cls := "winner-info",
         p(
           cls := "winner-name",
-          span(if (winners.length == 1) "Winner: " else "Winners: "),
-          span(cls := "highlight", names)
-        ),
-        p(
-          cls := "winner-amount",
-          span("Amount Won: "),
-          span(cls := "highlight", amounts)
+          span("Winner: "), 
+          span(cls := "highlight", s"$winnersName")
         )
       )
     )
     dom.window.setTimeout(() => { render(userId, view)}, 3000) // Re-render after 3 seconds
     tempInterface
   }
+
 
   /**
    * Renders the interface for the end of the game.
@@ -453,29 +462,6 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     )
   }
 
-  /**
-   * Extracts winners' names and the amounts they won from the logs after
-   * the most recent "Communal cards of the round" message.
-   *
-   * @param logs The list of game logs.
-   * @return A list of tuples containing (winner name, amount won).
-   */
-  private def extractWinnersFromLogs(logs: List[String]): List[(String, Int)] = {
-    // Find the index of the most recent "Communal cards of the round" message
-    val lastIndex = logs.lastIndexWhere(_.startsWith("Communal cards of the round"))
-
-    // Extract only logs after the most recent "Communal cards of the round"
-    val winnerLogs = logs.slice(lastIndex + 1, logs.length)
-
-    // Regex pattern to match "<winnerName> won <amount>$ !!!"
-    val winnerPattern = """(\w+)\s+won\s+(\d+)\$""".r
-
-    // Parse each log message and extract winners with amounts
-    winnerLogs.flatMap {
-      case winnerPattern(name, amount) => Some((name, amount.toInt)) // Extract name and amount
-      case _ => None // Ignore logs that don't match the pattern
-    }
-  }
 
   /**
    * Renders the communal cards on the table.
