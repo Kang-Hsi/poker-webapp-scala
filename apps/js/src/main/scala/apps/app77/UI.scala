@@ -381,11 +381,8 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
               .getElementById("raise-input")
               .asInstanceOf[HTMLInputElement]
             val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
-            if (raiseAmount >= getclient(view)._2) then sendEvent(Event.Bet(getclient(view)._2))
-            else {
-              val correctedAmount = math.max(raiseAmount, getcallAmount(view))
-              sendEvent(Event.Bet(correctedAmount))
-            }
+            val correctedAmount = math.max(raiseAmount, getcallAmount(view))
+            sendEvent(Event.Bet(correctedAmount))
           },
           "Raise"
         )
