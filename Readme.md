@@ -30,3 +30,26 @@ https://www.pokernews.com/poker-rules/texas-holdem.htm
 ### UI Snapshot 
 
 ![](snapshots/snapshot1.png)
+
+### Sources
+
+the following resources for learning and implementing CSS and HTML in this project:
+
+#### CSS Learning Resources:
+- **[MDN Web Docs (Mozilla Developer Network)](https://developer.mozilla.org/en-US/docs/Web/CSS)**: A comprehensive and authoritative reference for web developers, providing in-depth tutorials on the basics of CSS as well as advanced topics.
+- **[CSS Débutant](https://css.malven.co/)**: A French website tailored for beginners seeking to learn CSS, featuring detailed courses and tutorials.
+- **[Letecode](https://letecode.com/)**: Offers a complete CSS tutorial for beginners, covering everything from CSS fundamentals to advanced techniques. 
+- **[Uiverse.io CSS Animation](https://uiverse.io/ayman-ashine/rare-otter-33)**: Implemented part of the code from this specific source for the header animation "Poker Game".
+
+#### HTML Learning Resources:
+- **[W3Schools](https://www.w3schools.com/html/)**: A beginner-friendly platform that provides tutorials and examples to learn HTML efficiently.
+- **[MDN Web Docs - HTML](https://developer.mozilla.org/en-US/docs/Learn/HTML)**: A thorough guide for HTML, suitable for both beginners and advanced developers.
+
+Additionally, utilized GPT as a learning tool to deepen my understanding of HTML and CSS. It served as a resource for clarifying concepts, exploring best practices, and debugging ideas during development. While it provided valuable educational guidance, all the coding and implementation decisions were carried out independently.
+
+#### Image and Animation Sources:
+- **pot.png**: Generated using DALL-E, an AI image generator by GPT.
+- **hourglass.gif**: Sourced from [LottieFiles](https://lottiefiles.com/free-animation/hourglass-ZsufC3g4O4), a platform for high-quality animations.
+
+
+
