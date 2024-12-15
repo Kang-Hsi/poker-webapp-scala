@@ -516,15 +516,31 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     |
     | }
     | .poker-ui-clientTurn {
-    |   font-family: Arial, sans-serif;
-    |   margin: auto;
-    |   padding: 20px;
-    |   border: 3px solid #ccc;
-    |   border-color: #42eb05;
-    |   border-radius: 2px;
-    |   max-width: 200%;
-    |   text-align: center;
-    |   justify-content: center;
+    |  font-family: Arial, sans-serif;
+    |  margin: auto;
+    |  padding: 20px;
+    |  border: 3px solid #ccc;
+    |  border-color: #42eb05; /* Static border color */
+    |  border-radius: 2px;
+    |  max-width: 200%;
+    |  text-align: center;
+    |  justify-content: center;
+    |  animation: pulse-border 2s infinite; /* Animation for the green line */
+    | }
+    |
+    | @keyframes pulse-border {
+    |  0% {
+    |    border-color: #42eb05; /* Start with the green color */
+    |    box-shadow: 0 0 5px #42eb05;
+    |  }
+    |  50% {
+    |    border-color: #7fff00; /* Lighter green for pulse */
+    |    box-shadow: 0 0 15px #7fff00;
+    |  }
+    |  100% {
+    |    border-color: #42eb05; /* Return to the original green */
+    |    box-shadow: 0 0 5px #42eb05;
+    |  }
     | }
     | .header {
     |   --c-1: #66ff66;
