@@ -120,7 +120,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
       ),
       button(
         cls := "play-again-button",
-        onclick := { () => print("restart game") }, // TODO: Connect this to a restart game event
+        onclick := { () => sendEvent(Event.Restart()) },
         "Play Again"
       )
     )
