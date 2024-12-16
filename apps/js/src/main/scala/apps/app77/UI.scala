@@ -176,7 +176,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
     frag(
       round,
       p(
-        cls := s"${if getclient(view)._1 == view.gameInfo.players(0)._1 then "poker-ui-clientTurn" else "poker-ui"}",
+        cls := s"${if getClient(view).isDefined && getClient(view).get._1 == view.gameInfo.players(0)._1 then "poker-ui-clientTurn" else "poker-ui"}",
         header,
         rolesTableContainer,
         commCard,
@@ -197,18 +197,19 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
    * @param view The current game state containing the list of players.
    * @return The client player's information as a `PlayerInfo`.
    */
-  private def getclient(view: View): PlayerInfo = {
+  private def getClient(view: View): Option[PlayerInfo] = {
     // Filter players to find the client based on their hand
     val client = view.gameInfo.players.filter(p => p._5.isDefined)
     val newPlayerHand = Set(new Card(Suit.Heart, 0, " 🂠 "), new Card(Suit.Heart, 0, "🂠"))
     // If no client is found, assign an empty hand to the first player with no money
     if (client.isEmpty) {
-      view.gameInfo.players
-        .filter(p => p._2 == 0)(0)
-        .copy(_5 = newPlayerHand)
-    }
+     None 
+      //view.gameInfo.players
+       // .filter(p => p._2 == 0)(0)
+        //.copy(_5 = newPlayerHand)
+    } else
     // Return the client information
-    client(0)
+      Some(client(0))
   }
 
   /**
@@ -222,19 +223,23 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
    */
   private def callButtonText(view: View): String = {
     // Retrieve the client's money and the current call amount
-    val clientMoney = getclient(view)._2
+    val cl = getClient(view)
+    val clientMoney = if cl.isDefined then cl.get._2 else 0
     val callAmount = view.gameInfo.callAmount
 
     // If the client's money is less than or equal to the call amount, display "ALLIN!!"
+    if cl.isEmpty then
+      s"you lost.."
+    else
     if (clientMoney <= callAmount) {
       s"ALLIN!!"
     } else {
       // If the client has already matched the call amount, display "Check"
-      if(getcallAmount(view) == getclient(view)._6){
+      if(getcallAmount(view) == cl.get._6){
         s"Check"
       } else {
         // Otherwise, calculate the remaining call amount
-        s"Call ${{getcallAmount(view) - getclient(view)._6}}$$"
+        s"Call ${{getcallAmount(view) - cl.get._6}}$$"
       }
     }
   }
@@ -292,7 +297,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
                 case Role.Normal => s""
             } else if (rowData == 1) { // Handles name rendering
               if (userId == currentplayer) {
-                if (userId == getclient(view)._1)
+                if (getClient(view).isDefined && userId == getClient(view).get._1)
                   td(
                     div(
                       span(cls := "currentPlayer-name", s"${userId}"),
@@ -300,7 +305,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
                     )
                   )
                 else frag(b(s"${userId}"), img(src := "/static/hourglass.gif", alt := "Timer", cls := "timer-icon"))
-              } else if (userId == getclient(view)._1) {
+              } else if (getClient(view).isDefined && userId == getClient(view).get._1) {
                 div(cls := "currentPlayer-name", s"${userId}")
               } else {
                 s"${userId}"
@@ -350,7 +355,7 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
       // Fold button
       button(
-        cls := s"action-button-fold ${if (getclient(view)._1 != view.gameInfo.players(0)._1 || getclient(view)._4 == Status.Spectating || getclient(view)._4 == Status.AllIn) "action-button-disabled" else ""}",
+        cls := s"action-button-fold ${if (getClient(view).isDefined && ( getClient(view).get._1 != view.gameInfo.players(0)._1 || getClient(view).get._4 == Status.Spectating || getClient(view).get._4 == Status.AllIn)) "action-button-disabled" else ""}",
         onclick := { () =>
           sendEvent(Event.Fold())
         },
@@ -359,16 +364,19 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
 
       // Call button
       button(
-        cls := s"action-button-call ${if (getclient(view)._1 != view.gameInfo.players(0)._1 || getclient(view)._4 == Status.Spectating || getclient(view)._4 == Status.AllIn) "action-button-disabled" else ""}",
+        cls := s"action-button-call ${if (getClient(view).isDefined && (getClient(view).get._1 != view.gameInfo.players(0)._1 || getClient(view).get._4 == Status.Spectating || getClient(view).get._4 == Status.AllIn)) "action-button-disabled" else ""}",
         onclick := { () =>
-          if (getcallAmount(view) == getclient(view)._6) {
+          if (getClient(view).isDefined && getcallAmount(view) == getClient(view).get._6) {
             sendEvent(Event.Check())
-          } else {
+          } else if (getClient(view).isDefined) {
             val callAmount = getcallAmount(view)
-            val client = getclient(view)
+            val client = getClient(view).get
             val amountToBet = math.min(client._2, callAmount - client._6)
             sendEvent(Event.Bet(amountToBet))
-          }
+          } else {
+            ;
+            //do nothing;
+        }
         },
         callButtonText(view) // Display the appropriate text for the call button
       ),
@@ -384,13 +392,13 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
           cls := "raise-input"
         ),
         button(
-          cls := s"action-button-raise ${if (getclient(view)._1 != view.gameInfo.players(0)._1 || getclient(view)._4 == Status.Spectating || getclient(view)._4 == Status.AllIn) "action-button-disabled" else ""}",
+          cls := s"action-button-raise ${if (getClient(view).isDefined && (getClient(view).get._1 != view.gameInfo.players(0)._1 || getClient(view).get._4 == Status.Spectating || getClient(view).get._4 == Status.AllIn)) "action-button-disabled" else ""}",
           onclick := { () =>
             val inputElement = dom.document
               .getElementById("raise-input")
               .asInstanceOf[HTMLInputElement]
             val raiseAmount = inputElement.value.toIntOption.getOrElse(getcallAmount(view))
-            if (raiseAmount >= getclient(view)._2) then sendEvent(Event.Bet(getclient(view)._2))
+            if (getClient(view).isDefined &&  raiseAmount >= getClient(view).get._2) then sendEvent(Event.Bet(getClient(view).get._2))
             else {
               val correctedAmount = math.max(raiseAmount, getcallAmount(view))
               sendEvent(Event.Bet(correctedAmount))
@@ -413,8 +421,15 @@ class UIInstance(userId: UserId, sendMessage: ujson.Value => Unit, target: Targe
    * @return A `Frag` containing the player's hand, balance, and pot as a table.
    */
   private def playersHandBalanceRender(view: View) = {
-    val myCards = getclient(view)._5.get.map(card => (card._1, card._3)).toList // Extract player's cards
-    val myMoney = getclient(view)._2 // Extract player's money
+    val cl = getClient(view)
+    val myCards = if cl.isEmpty then
+                      Set(new Card(Suit.Heart, 0, " 🂠 "), new Card(Suit.Heart, 0, "🂠")).map(card => (card._1, card._3)).toList
+                  else 
+                      getClient(view).get._5.get.map(card => (card._1, card._3)).toList // Extract player's cards
+    val myMoney = if cl.isEmpty then
+                    0   
+                  else
+                    getClient(view).get._2 // Extract player's money
 
     // Build the table for the player's hand, money, and communal pot
     div(
